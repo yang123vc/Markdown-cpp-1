@@ -20,5 +20,6 @@
 #define TEST_STRONG             "Tests/Strong and em together.text"
 #define TEST_TABS               "Tests/Tabs.text"
 #define TEST_TIDY               "Tests/Tidyness.text"
+#define TEST_CUSTOM             "Tests/Custom.text"
 
 #endif // TEST_H_

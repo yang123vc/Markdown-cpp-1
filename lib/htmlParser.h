@@ -1,32 +1,42 @@
-#ifndef HTML_PARSER_H_
-#define HTML_PARSER_H_
+#ifndef HTMLPARSER_H
+#define HTMLPARSER_H
 
-#include "parser.h"
+#include "MarkdownParser.h"
 
-class HTMLParser : public Parser{
 
+class HTMLParser : public MarkdownParser
+{
     public:
-        HTMLParser(bool header = false);
+        /** Default constructor */
+        HTMLParser();
+        /** Default destructor */
         virtual ~HTMLParser();
 
-        void add_header();
-        void add_footer();
+    protected:
 
-        //void new_line(string line);
-        void edit_block(string block);
+        void footer_event();
+        void header_event();
 
-        void empty_line_event();
-        int spezial_char_event(const char* c);
-        int reference_event(const char* c);
+        string header_event(string line, int level);
+        string horizontal_rule_event();
 
-        bool isspezial(char c);
-        bool isreference(char c);
+        string paragraph_begin_event();
+        string paragraph_end_event();
 
-        void insert_link(Ref item, string name = "");
+        string blockquote_begin_event();
+        string blockquote_end_event();
+
+        string list_item_begin_event();
+        string list_item_end_event();
+
+        string list_begin_event();
+        string list_end_event();
+
+        string ordered_list_begin_event();
+        string ordered_list_end_event();
+
 
     private:
-        string block;
-        bool header;
 };
 
-#endif // HTML_PARSER_H_
+#endif // HTMLPARSER_H

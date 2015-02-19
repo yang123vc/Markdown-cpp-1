@@ -20,8 +20,9 @@
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="bin/Release/markdown" prefix_auto="1" extension_auto="1" />
+				<Option output="markdown" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release/" />
+				<Option external_deps="libmarkdown.a;" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -32,21 +33,7 @@
 					<Add library="markdown" />
 				</Linker>
 			</Target>
-			<Target title="libmarkdown">
-				<Option output="markdown" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="" />
-				<Option object_output="obj/lib/" />
-				<Option type="2" />
-				<Option compiler="gcc" />
-				<Option createDefFile="1" />
-				<Compiler>
-					<Add option="-Wfatal-errors" />
-				</Compiler>
-			</Target>
 		</Build>
-		<VirtualTargets>
-			<Add alias="build" targets="libmarkdown;Release;" />
-		</VirtualTargets>
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
@@ -59,6 +46,7 @@
 		<Unit filename="Tests/Auto links.text" />
 		<Unit filename="Tests/Backslash escapes.text" />
 		<Unit filename="Tests/Blockquotes with code blocks.text" />
+		<Unit filename="Tests/Custom.text" />
 		<Unit filename="Tests/Hard-wrapped paragraphs with list-like lines.text" />
 		<Unit filename="Tests/Horizontal rules.text" />
 		<Unit filename="Tests/Inline HTML (Advanced).text" />
@@ -74,14 +62,8 @@
 		<Unit filename="Tests/Strong and em together.text" />
 		<Unit filename="Tests/Tabs.text" />
 		<Unit filename="Tests/Tidyness.text" />
-		<Unit filename="file.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="file.h">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
+		<Unit filename="file.cpp" />
+		<Unit filename="file.h" />
 		<Unit filename="html/Amps and angle encoding.html" />
 		<Unit filename="html/Auto links.html" />
 		<Unit filename="html/Backslash escapes.html" />
@@ -101,50 +83,8 @@
 		<Unit filename="html/Strong and em together.html" />
 		<Unit filename="html/Tabs.html" />
 		<Unit filename="html/Tidyness.html" />
-		<Unit filename="lib/functions.cpp">
-			<Option target="libmarkdown" />
-		</Unit>
-		<Unit filename="lib/functions.h">
-			<Option target="libmarkdown" />
-		</Unit>
-		<Unit filename="lib/htmlParser.cpp">
-			<Option target="libmarkdown" />
-		</Unit>
-		<Unit filename="lib/htmlParser.h">
-			<Option target="libmarkdown" />
-		</Unit>
-		<Unit filename="lib/latexParser.cpp">
-			<Option target="libmarkdown" />
-		</Unit>
-		<Unit filename="lib/latexParser.h">
-			<Option target="libmarkdown" />
-		</Unit>
-		<Unit filename="lib/links.cpp">
-			<Option target="libmarkdown" />
-		</Unit>
-		<Unit filename="lib/links.h">
-			<Option target="libmarkdown" />
-		</Unit>
-		<Unit filename="lib/markdown.cpp">
-			<Option target="libmarkdown" />
-		</Unit>
-		<Unit filename="lib/markdown.h">
-			<Option target="libmarkdown" />
-		</Unit>
-		<Unit filename="lib/parser.cpp">
-			<Option target="libmarkdown" />
-		</Unit>
-		<Unit filename="lib/parser.h">
-			<Option target="libmarkdown" />
-		</Unit>
-		<Unit filename="main.cpp">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
-		<Unit filename="test.h">
-			<Option target="Debug" />
-			<Option target="Release" />
-		</Unit>
+		<Unit filename="main.cpp" />
+		<Unit filename="test.h" />
 		<Extensions>
 			<DoxyBlocks>
 				<comment_style block="0" line="0" />

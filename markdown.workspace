@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_workspace_file>
+	<Workspace title="Markdown">
+		<Project filename="markdown.cbp" />
+		<Project filename="libmarkdown.cbp" />
+		<Project filename="../inlineTest/inlineTest.cbp" />
+	</Workspace>
+</CodeBlocks_workspace_file>

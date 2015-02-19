@@ -1,177 +1,56 @@
-#include "parser.h"
+#include "Parser.h"
 
-#include "functions.h"
-
-Parser::Parser() : content(""),block(""),temp("")
+void Parser::set_lines(list<string>& lines)
 {
-    empty_line = false;
-}
-
-Parser::~Parser()
-{
-
-}
-
-void Parser::add_header()
-{
-
-}
-
-void Parser::add_footer()
-{
-
-}
-
-#include <iostream>
-void Parser::new_line(string line)
-{
-
-    if( line.empty())
-    {
-        if( !block.empty())
-        {
-            edit_block(block);
-            block = "";
-        }
-        if( empty_line)
-            mul_empty_line_event();
-        else
-        {
-            empty_line = true;
-            empty_line_event();
-        }
-    }
-    else
-    {
-        empty_line = false;
-        bool newline = !block.empty();
-
-        for( size_t i = 0; i < line.length(); i++)
-        {
-            const char* cont = line.c_str();
-            int skip = 0;
-            if( isspezial(cont[i]))
-            {
-                skip = spezial_char_event(&cont[i]);
-            }
-            else if( isreference(cont[i]))
-            {
-                skip = reference_event(&cont[i]);
-            }
-            else
-            {
-                block += cont[i];
-            }
-
-            if( skip != 0)
-            {
-                line.replace(i,skip,temp.c_str());
-                temp = "";
-                i--;
-            }
-        }
-        if( newline)
-            block += "\n";
-    }
-}
-
-void Parser::edit_block(string block)
-{
-    insert(block);
-}
-
-void Parser::empty_line_event()
-{
-
-}
-
-void Parser::mul_empty_line_event()
-{
-
-}
-
-int Parser::spezial_char_event( const char* c)
-{
-    block += c[0];
-    return 0;
-}
-
-int Parser::reference_event(const char* c)
-{
-    block += c[0];
-    return 0;
-}
-
-bool Parser::isspezial( char c)
-{
-    return false;
-}
-
-bool Parser::isreference(char c)
-{
-    return false;
-}
-
-void Parser::flush()
-{
-    if( !block.empty())
-    {
-        edit_block(block);
-        block = "";
-    }
+    m_lines = lines;
 }
 
 string Parser::get_content()
 {
-    return this->content;
+    return m_content;
 }
 
-void Parser::insert(string cont)
+list<string> Parser::extract_parameter(string& line)
 {
-    this->content += cont;
-    this->content += "\n";
-}
+    list<string> params;
+    char para[512];
+    int j = 0;
+    bool wasSpace = false;
 
-void Parser::insert_block(string cont)
-{
-    this->block += cont;
-    this->block += "\n";
-}
+    for( size_t i = 0; i < line.length(); i++)
+    {
+        char c = line[i];
+        if( isspace(c))
+        {
+            if( !wasSpace)
+            {
+                para[j] = '\0';
+                params.push_back(para);
+                j = 0;
+                wasSpace = true;
+            }
+        }
+        else if( c == '\"' || c == '\'')
+        {
+            wasSpace = false;
+            while( (i < line.length()) && (line[i] != c))
+                para[j++] = line[++i];
+        }
+        else
+        {
+            para[j++] = c;
+            wasSpace = false;
+        }
+    }
+    if( j!= 0)
+    {
+        para[j] = '\0';
+        params.push_back(para);
+    }
 
-void Parser::add(string cont)
-{
-    this->content += cont;
+    return params;
 }
-
-void Parser::add_block(string cont)
+void Parser::insert(string content)
 {
-    this->block += cont;
-}
-
-void Parser::newline()
-{
-    this->content += "\n";
-}
-
-void Parser::add_temp(string cont)
-{
-    temp += cont;
-}
-
-void Parser::set_refs(map<string, Ref>* refs)
-{
-    this->refs = refs;
-}
-
-map<string,Ref>::iterator Parser::find_ref(string item)
-{
-    toLower(item);
-    return refs->find(item);
-}
-
-bool Parser::found_ref(map<string,Ref>::iterator item)
-{
-    if( item != refs->end())
-        return true;
-    return false;
+    m_content += content;
 }
