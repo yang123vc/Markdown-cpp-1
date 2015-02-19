@@ -5,7 +5,7 @@
 *.layout
 *.depend
 *.save
-CppCheckResult.xml
+CppCheckResults.xml
 doxygen/
 bin/
 obj/
