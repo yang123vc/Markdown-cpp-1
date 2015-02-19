@@ -1,0 +1,11 @@
+*.exe
+*.o
+*.a
+*.def
+*.layout
+*.depend
+*.save
+CppCheckResult.xml
+doxygen/
+bin/
+obj/
