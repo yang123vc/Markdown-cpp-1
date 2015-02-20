@@ -7,7 +7,8 @@
 
 MarkdownParser::MarkdownParser()
 {
-    m_headers = true;
+    m_ordered = false;
+    print_headers(true);
 }
 
 MarkdownParser::~MarkdownParser()
@@ -67,11 +68,67 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
             }
             else if( isheadline(*line)) // header block
             {
-                (*line) = header_event(m_match[3],string(m_match[2])[0]-'0');
+                (*line) = header_event(string(m_match[3]),string(m_match[2])[0]-'0');
                 insert_level(level);
                 insert(*line);
                 insert_line();
                 //cout << (*line) << endl;
+            }
+            else if( iscodeblock(*line)) // code block
+            {
+                insert_level(level);
+                insert(preformat_begin_event());
+                insert(code_begin_event(m_match[1]));
+
+                do
+                {
+                    ++line;
+                    if( line == lines.end() || iscodeblock(*line))
+                        break;
+                    insert(*line);
+                    insert_line();
+                }while(true);
+                insert(code_end_event());
+                insert(preformat_end_event());
+                insert_line();
+            }
+            else if( ispreformated(*line)) // code block
+            {
+                insert_level(level);
+                if(level == 0)
+                    insert(preformat_begin_event());
+                insert(code_begin_event());
+
+                do
+                {
+                    //insert_level(level);
+                    if( ispreformated(*line))
+                    {
+                        insert((*line).substr(m_match.length(0)));
+                    }
+                    insert_line();
+                    empty_line = false;
+                    ++line;
+                    if( line == lines.end())
+                        break;
+                    else if( (*line).empty())
+                    {
+                        empty_line = true;
+                    }
+
+                    if( isblockquote(*line) || !ispreformated(*line))
+                    {
+                        --line;
+                        if( empty_line)
+                            --line;
+                        break;
+                    }
+
+                }while(true);
+                insert(code_end_event());
+                if(level == 0)
+                    insert(preformat_end_event());
+                insert_line();
             }
             else if( isblockquote((*line))) // blockquote
             {
@@ -142,55 +199,73 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
                     if( islist(*line) )
                     {
                         //cout << list_item_begin_event() << endl;
-                        insert_level(level);
+                        insert_level(level+1);
                         insert(list_item_begin_event());
                         insert_line();
                         list<string> content;
                         content.push_back((*line).substr(m_match.length(0)));
                         do
                         {
+                            empty_line = false;
                             ++line;
-                            if( line == lines.end() || isheadline(*line)
-                             || islist(*line) || isblockquote(*line))
+                            if( line == lines.end())
+                                break;
+                            else if( (*line).empty())
                             {
+                                empty_line = true;
+                                ++line;
+                            }
+                            if( line == lines.end() || isheadline(*line)
+                             || isblockquote(*line))
+                            {
+                                if( empty_line)
+                                    --line;
+                                break;
+                            }
+                            else if(islist(*line))
+                            {
+                                if( empty_line)
+                                    content.push_back("");
                                 break;
                             }
                             else if( ispreformated(*line))
                             {
+                                if( empty_line)
+                                    content.push_back("");
                                 content.push_back((*line).substr(m_match.length(0)));
+                            }
+                            else if( iscodeblock(*line))
+                            {
+                                if( empty_line)
+                                {
+                                    --line;
+                                    break;
+                                }
+                                content.push_back(*line);
                             }
                             else
                                 content.push_back(*line);
                         }while(true);
 
-                        list_blocks(content, level+1);
+                        list_blocks(content, level+2);
 
-                        /*for( string content_line : content)
-                            cout << "{" << content_line << "}" << endl;*/
-
-                        //cout << list_item_end_event() << endl;
-                        insert_level(level);
+                        insert_level(level+1);
                         insert(list_item_end_event());
                         insert_line();
-                    }
-                    else
-                    {
-                        cout << "don't know" << endl;
-                        ++line;
                     }
                     if( line == lines.end())
                         break;
                     else if((*line).empty())
                     {
                         ++line;
-                        if( line == lines.end() || !isblockquote(*line))
+                        if( line == lines.end() || isblockquote(*line) || isblockquote(*line))
                         {
                             --line;
                             --line;
                             break;
                         }
                     }
-                    else if( isheadline(*line))
+                    else if( isheadline(*line)  || isblockquote(*line))
                     {
                         --line;
                         break;
@@ -288,7 +363,7 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
                 {
                     if( islist(*line) )
                     {
-                        insert_level(level);
+                        insert_level(level+1);
                         insert(list_item_begin_event());
                         insert_line();
                         //cout << list_item_begin_event() << endl;
@@ -296,44 +371,67 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
                         content.push_back((*line).substr(m_match.length(0)));
                         do
                         {
+                            empty_line = false;
                             ++line;
-                            if( line == lines.end() || isheadline(*line)
-                             || islist(*line) || isblockquote(*line))
+                            if( line == lines.end())
+                                break;
+                            else if( (*line).empty())
                             {
+                                empty_line = true;
+                                ++line;
+                            }
+                            if( line == lines.end() || isheadline(*line)
+                             || isblockquote(*line))
+                            {
+                                if( empty_line)
+                                    --line;
+                                break;
+                            }
+                            else if(islist(*line))
+                            {
+                                if( empty_line)
+                                    content.push_back("");
                                 break;
                             }
                             else if( ispreformated(*line))
                             {
+                                if( empty_line)
+                                    content.push_back("");
                                 content.push_back((*line).substr(m_match.length(0)));
+                            }
+                            else if( iscodeblock(*line))
+                            {
+                                if( empty_line)
+                                {
+                                    --line;
+                                    break;
+                                }
+                                content.push_back(*line);
                             }
                             else
                                 content.push_back(*line);
                         }while(true);
 
-                        list_blocks(content, level+1);
+                        list_blocks(content, level+2);
                         //cout << list_item_end_event() << endl;
-                        insert_level(level);
+                        insert_level(level+1);
                         insert(list_item_end_event());
                         insert_line();
                     }
-                    else
-                    {
-                        cout << "don't know" << endl;
-                        ++line;
-                    }
+
                     if( line == lines.end())
                         break;
                     else if((*line).empty())
                     {
                         ++line;
-                        if( line == lines.end() || !isblockquote(*line))
+                        if( line == lines.end() || isblockquote(*line) || iscodeblock(*line))
                         {
                             --line;
                             --line;
                             break;
                         }
                     }
-                    else if( isheadline(*line))
+                    else if( isheadline(*line) || isblockquote(*line))
                     {
                         --line;
                         break;
@@ -355,11 +453,13 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
         }
         else if((*line).empty())
         {
-            if( !empty_line)
+            if( !empty_line )
             {
+
                 empty_line = true;
                 //cout << endl;
-                insert_line();
+                if( next(line) != lines.end())
+                    insert_line();
             }
         }
 
@@ -419,7 +519,8 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
 
 bool MarkdownParser::isblock(string& block)
 {
-    return (isblockquote(block) || ishrule(block) || islist(block));
+    return (isblockquote(block) || ishrule(block)
+         || islist(block) || ispreformated(block) || iscodeblock(block));
 }
 
 bool MarkdownParser::isblockquote(string& block)
@@ -466,6 +567,12 @@ bool MarkdownParser::ispreformated(string& block)
     return regex_search(block, m_match, preformated);
 }
 
+bool MarkdownParser::iscodeblock(string& block)
+{
+    regex code("^```(.*)");
+    return regex_search(block, m_match, code);
+}
+
 void MarkdownParser::initial_manipulation()
 {
     list<string> temp_lines;
@@ -487,7 +594,9 @@ void MarkdownParser::initial_manipulation()
                 }
                 else if( mode > 0)
                 {
-                    if( !temp_lines.empty() && !temp_lines.back().empty())
+                    string last_line = temp_lines.back();
+                    trim(last_line);
+                    if( !temp_lines.empty() && !last_line.empty())
                     {
                         string last = temp_lines.back();
                         temp_lines.pop_back();
@@ -584,7 +693,7 @@ bool MarkdownParser::reference_line(string& line)
 
         referenz.name = match[1];
         string name = referenz.name;
-        tolower(name);
+        toLower(name);
         m_refs[name] = referenz;
 
         return true;

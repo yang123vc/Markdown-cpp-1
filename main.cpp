@@ -27,7 +27,7 @@ int main(int argc, char** argv)
     parser->print_headers(false);
     string parsed = parse( content, parser);
 
-    cout << parsed << endl;
+    //cout << parsed << endl;
 
     set_file_contents("output/out.html",parsed);
 

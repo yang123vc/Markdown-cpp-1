@@ -35,6 +35,11 @@ class HTMLParser : public MarkdownParser
         string ordered_list_begin_event();
         string ordered_list_end_event();
 
+        string preformat_begin_event();
+        string preformat_end_event();
+
+        string code_begin_event(string lang);
+        string code_end_event();
 
     private:
 };

@@ -11,7 +11,7 @@
 				<Option object_output="obj/lib/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
-				<Option parameters="19" />
+				<Option parameters="19 &gt; output/out.html" />
 				<Option host_application="markdown.exe" />
 				<Option run_host_application_in_terminal="1" />
 				<Option createDefFile="1" />

@@ -48,21 +48,22 @@ class MarkdownParser : public Parser
         void define_blocks(list<string>& lines, int level = 0);
         void list_blocks(list<string>& lines, int level);
 
-        bool isblock( string& block);
-        bool isblockquote( string& block);
-        bool isheadline( string& block);
-        bool ishrule(string& block);
-        bool islist(string& block);
-        bool isunorderedlist(string& block);
-        bool isorderedlist(string& block);
-        bool ispreformated( string& block);
+        inline bool isblock( string& block);
+        inline bool isblockquote( string& block);
+        inline bool isheadline( string& block);
+        inline bool ishrule(string& block);
+        inline bool islist(string& block);
+        inline bool isunorderedlist(string& block);
+        inline bool isorderedlist(string& block);
+        inline bool ispreformated( string& block);
+        inline bool iscodeblock(string& block);
 
         void initial_manipulation();
         void blcokquote_manipulation(list<string>& lines);
 
-        bool reference_line(string& line);
-        int header_line( string& line);
-        bool horizontal_rule_line(string &line);
+        inline bool reference_line(string& line);
+        inline int header_line( string& line);
+        inline bool horizontal_rule_line(string &line);
 
         void insert_level(int level);
         void insert_line();
@@ -89,6 +90,12 @@ class MarkdownParser : public Parser
 
         virtual string ordered_list_begin_event()=0;
         virtual string ordered_list_end_event()=0;
+
+        virtual string preformat_begin_event()=0;
+        virtual string preformat_end_event()=0;
+
+        virtual string code_begin_event(string lang = "")=0;
+        virtual string code_end_event()=0;
 
     private:
 

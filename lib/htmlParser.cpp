@@ -86,3 +86,24 @@ string HTMLParser::ordered_list_end_event()
     return "</ol>";
 }
 
+string HTMLParser::preformat_begin_event()
+{
+    return "<pre>";
+}
+
+string HTMLParser::preformat_end_event()
+{
+    return "</pre>";
+}
+
+string HTMLParser::code_begin_event(string lang)
+{
+    if( lang.empty())
+        return "<code>";
+    return "<code class='"+lang+"'>";
+}
+
+string HTMLParser::code_end_event()
+{
+    return "</code>";
+}

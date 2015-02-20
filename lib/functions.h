@@ -30,11 +30,10 @@ static inline string& trim(string& s)
 }
 
 // make all letters small
-static inline string& tolower(string& s)
+static inline void toLower(string& s)
 {
     for( string::iterator it = s.begin(); it != s.end(); ++it)
         *it = tolower(*it);
-    return s;
 }
 
 #endif // FUNCTIONS_H_
