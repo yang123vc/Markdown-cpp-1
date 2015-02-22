@@ -20,14 +20,14 @@ int main(int argc, char** argv)
 
     string content;
     if( argc == 1)
-        content = get_file_contents(TEST_AUTO_LINKS);
+        content = get_file_contents(TEST_CUSTOM);
     else
-        content = get_file_contents(files[atoi(argv[1])]);
+        content = get_file_contents(TEST_CUSTOM);
     HTMLParser* parser = new HTMLParser();
     parser->print_headers(false);
     string parsed = parse( content, parser);
 
-    //cout << parsed << endl;
+    cout << parsed << endl;
 
     set_file_contents("output/out.html",parsed);
 

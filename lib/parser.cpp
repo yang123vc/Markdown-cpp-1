@@ -1,5 +1,7 @@
 #include "Parser.h"
 
+#include <string.h>
+
 void Parser::set_lines(list<string>& lines)
 {
     m_lines = lines;
@@ -50,7 +52,13 @@ list<string> Parser::extract_parameter(string& line)
 
     return params;
 }
+
 void Parser::insert(string content)
 {
     m_content += content;
+}
+
+void Parser::insert(const char& c)
+{
+    m_content += c;
 }

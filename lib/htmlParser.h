@@ -20,26 +20,32 @@ class HTMLParser : public MarkdownParser
         string header_event(string line, int level);
         string horizontal_rule_event();
 
-        string paragraph_begin_event();
-        string paragraph_end_event();
+        void paragraph_begin_event();
+        void paragraph_end_event();
 
-        string blockquote_begin_event();
-        string blockquote_end_event();
+        void blockquote_begin_event();
+        void blockquote_end_event();
 
-        string list_item_begin_event();
-        string list_item_end_event();
+        void list_item_begin_event();
+        void list_item_end_event();
 
-        string list_begin_event();
-        string list_end_event();
+        void list_begin_event();
+        void list_end_event();
 
-        string ordered_list_begin_event();
-        string ordered_list_end_event();
+        void ordered_list_begin_event();
+        void ordered_list_end_event();
 
-        string preformat_begin_event();
-        string preformat_end_event();
+        void preformat_begin_event();
+        void preformat_end_event();
 
-        string code_begin_event(string lang);
-        string code_end_event();
+        void code_begin_event(string lang);
+        void code_end_event();
+
+        void replace_code_char(const char& c);
+        void replace_char(const char& c);
+
+        void generate_link( Ref ref, string& name);
+        void generate_img( Ref src, string& alt);
 
     private:
 };

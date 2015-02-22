@@ -29,7 +29,6 @@
 					<Add option="-O2" />
 				</Compiler>
 				<Linker>
-					<Add option="-s" />
 					<Add library="markdown" />
 				</Linker>
 			</Target>

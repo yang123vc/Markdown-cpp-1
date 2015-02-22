@@ -23,6 +23,8 @@ void HTMLParser::header_event()
 
 }
 
+
+
 string HTMLParser::header_event(string line, int level)
 {
     char buffer[line.length() + 12];
@@ -35,75 +37,135 @@ string HTMLParser::horizontal_rule_event()
     return "<hr />";
 }
 
-string HTMLParser::paragraph_begin_event()
+void HTMLParser::paragraph_begin_event()
 {
-    return "<p>";
+    insert( "<p>");
 }
 
-string HTMLParser::paragraph_end_event()
+void HTMLParser::paragraph_end_event()
 {
-    return "</p>";
+    insert( "</p>");
 }
 
-string HTMLParser::blockquote_begin_event()
+void HTMLParser::blockquote_begin_event()
 {
-     return "<blockquote>";
+     insert( "<blockquote>");
 }
 
-string HTMLParser::blockquote_end_event()
+void HTMLParser::blockquote_end_event()
 {
-    return "</blockquote>";
+    insert( "</blockquote>");
 }
 
-string HTMLParser::list_item_begin_event()
+void HTMLParser::list_item_begin_event()
 {
-    return "<li>";
+    insert( "<li>");
 }
 
-string HTMLParser::list_item_end_event()
+void HTMLParser::list_item_end_event()
 {
-    return "</li>";
+    insert( "</li>");
 }
 
 
-string HTMLParser::list_begin_event()
+void HTMLParser::list_begin_event()
 {
-    return "<ul>";
+    insert( "<ul>");
 }
 
-string HTMLParser::list_end_event()
+void HTMLParser::list_end_event()
 {
-    return "</ul>";
+    insert( "</ul>");
 }
 
-string HTMLParser::ordered_list_begin_event()
+void HTMLParser::ordered_list_begin_event()
 {
-    return "<ol>";
+    insert( "<ol>");
 }
 
-string HTMLParser::ordered_list_end_event()
+void HTMLParser::ordered_list_end_event()
 {
-    return "</ol>";
+    insert( "</ol>");
 }
 
-string HTMLParser::preformat_begin_event()
+void HTMLParser::preformat_begin_event()
 {
-    return "<pre>";
+    insert( "<pre>");
 }
 
-string HTMLParser::preformat_end_event()
+void HTMLParser::preformat_end_event()
 {
-    return "</pre>";
+    insert( "</pre>");
 }
 
-string HTMLParser::code_begin_event(string lang)
+void HTMLParser::code_begin_event(string lang)
 {
     if( lang.empty())
-        return "<code>";
-    return "<code class='"+lang+"'>";
+        insert( "<code>");
+    else
+        insert( "<code class='"+lang+"'>");
 }
 
-string HTMLParser::code_end_event()
+void HTMLParser::code_end_event()
 {
-    return "</code>";
+    insert( "</code>");
+}
+
+void HTMLParser::replace_code_char(const char& c)
+{
+    switch( c)
+    {
+        case '<':
+            insert( "&lt;");
+        break;
+        case '>':
+            insert( "&gt;");
+        break;
+        case '&':
+            insert( "&amp;");
+        break;
+        default:
+            insert( c);
+        break;
+    }
+}
+
+void HTMLParser::replace_char(const char& c)
+{
+    switch( c)
+    {
+        case '&':
+            insert( "&amp;");
+        break;
+
+        case '<':
+            insert( "&lt;");
+        break;
+
+        default:
+            insert( c);
+        break;
+    }
+}
+
+void HTMLParser::generate_link(Ref ref, string& name)
+{
+    insert("<a href='");
+    for( char c : ref.link)
+        replace_char(c);
+    insert("'>");
+    for( char c : name)
+        replace_char(c);
+    insert("</a>");
+}
+
+void HTMLParser::generate_img(Ref src, string& alt)
+{
+    insert("<img src='");
+    for( char c : src.link)
+        replace_char(c);
+    insert("' alt='");
+    for( char c : alt)
+        replace_char(c);
+    insert("'/>");
 }

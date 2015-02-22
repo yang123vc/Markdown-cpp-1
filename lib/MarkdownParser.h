@@ -3,6 +3,9 @@
 
 #include "Parser.h"
 
+#include <iostream>
+#include <list>
+#include <stdio.h>
 #include <regex>
 
 struct sRef
@@ -14,6 +17,8 @@ struct sRef
 };
 
 typedef struct sRef Ref;
+
+using namespace std;
 
 class MarkdownParser : public Parser
 {
@@ -61,9 +66,24 @@ class MarkdownParser : public Parser
         void initial_manipulation();
         void blcokquote_manipulation(list<string>& lines);
 
-        inline bool reference_line(string& line);
-        inline int header_line( string& line);
-        inline bool horizontal_rule_line(string &line);
+        void parse_line(string& s);
+        void parse_code_line(string& s);
+
+        int find_bold(string& s);
+        int find_italic(string& s);
+        int find_unicode(string& s);
+        int find_comment(string& s);
+        int find_htmlTags(string& s);
+      //int find_open_htmlTags(string& s);
+      //int find_close_htmlTags(string& s);
+        int find_inline_code(string& s);
+        int find_references(string& s);
+        int find_links(string& s);
+        int find_new_line(string& s);
+
+        bool reference_line(string& line);
+        int header_line( string& line);
+        bool horizontal_rule_line(string &line);
 
         void insert_level(int level);
         void insert_line();
@@ -76,30 +96,61 @@ class MarkdownParser : public Parser
         virtual string header_event(string line, int level)=0;
         virtual string horizontal_rule_event()=0;
 
-        virtual string paragraph_begin_event()=0;
-        virtual string paragraph_end_event()=0;
+        virtual void paragraph_begin_event()=0;
+        virtual void paragraph_end_event()=0;
 
-        virtual string blockquote_begin_event()=0;
-        virtual string blockquote_end_event()=0;
+        virtual void blockquote_begin_event()=0;
+        virtual void blockquote_end_event()=0;
 
-        virtual string list_item_begin_event()=0;
-        virtual string list_item_end_event()=0;
+        virtual void list_item_begin_event()=0;
+        virtual void list_item_end_event()=0;
 
-        virtual string list_begin_event()=0;
-        virtual string list_end_event()=0;
+        virtual void list_begin_event()=0;
+        virtual void list_end_event()=0;
 
-        virtual string ordered_list_begin_event()=0;
-        virtual string ordered_list_end_event()=0;
+        virtual void ordered_list_begin_event()=0;
+        virtual void ordered_list_end_event()=0;
 
-        virtual string preformat_begin_event()=0;
-        virtual string preformat_end_event()=0;
+        virtual void preformat_begin_event()=0;
+        virtual void preformat_end_event()=0;
 
-        virtual string code_begin_event(string lang = "")=0;
-        virtual string code_end_event()=0;
+        virtual void code_begin_event(string lang = "")=0;
+        virtual void code_end_event()=0;
+
+        virtual void replace_code_char(const char& c)=0;
+        virtual void replace_char(const char& c)=0;
+
+        virtual void generate_link( Ref ref, string& name)=0;
+        virtual void generate_img( Ref src, string& alt)=0;
 
     private:
 
         map<string,Ref> m_refs;
+
+        regex bold;
+        regex italic;
+        regex unicodeChar;
+        regex comment;
+        regex htmlTags;
+        regex inline_code;
+        regex headline;
+        regex header_rule1;
+        regex header_rule2;
+        regex horizontal_rule1;
+        regex horizontal_rule2;
+        regex hrule;
+        regex anylist;
+        regex ulist;
+        regex olist;
+        regex preformated;
+        regex code;
+        regex reference_db;
+        regex reference_inline;
+        regex links;
+        regex force_line;
+        regex refs;
+
+
         smatch m_match;
 
         bool m_headers;

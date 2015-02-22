@@ -1,7 +1,4 @@
 #include "MarkdownParser.h"
-#include <iostream>
-#include <list>
-#include <stdio.h>
 
 #include "functions.h"
 
@@ -9,6 +6,28 @@ MarkdownParser::MarkdownParser()
 {
     m_ordered = false;
     print_headers(true);
+    bold = regex("^((?:\\*|_){2})((?!\\s|\\1).*?[^\\s\\\\](?:\\*|_)?)\\1");
+    italic = regex("^(\\*|_)((?!\\s|\\1).*?[^\\s\\\\])\\1");
+    unicodeChar = regex("^&([a-zA-Z]+|#[0-9]+);");
+    comment = regex("^<!--(.*?)-->");
+    htmlTags = regex("^<([a-zA-Z][a-zA-Z0-9]*)\\b([^>]*)>([^\n\r]*?)</\\1>");
+    inline_code = regex("^(``|`)(.+?)\\1");
+    headline = regex("^([ ]{0,3})<h([1-6])>([^<]*)</h[1-6]>");
+    header_rule1 = regex("^(=+|-+)[ \\t\\f]*$");
+    header_rule2 = regex("^(#{1,})([^#]*?)(#*)$");
+    horizontal_rule1 = regex("^[ ]{0,3}\\*([ ]{0,2}\\*){2,}[ \\t\\f]*$");
+    horizontal_rule2 = regex("^[ ]{0,3}-([ ]{0,2}-){2,}[ \\t\\f]*$");
+    hrule = regex("^[ ]{0,3}<[ ]?hr[ ]?/?>");
+    anylist = regex("^(\\*|\\+|-|[0-9]+\\.)[ ]+");
+    ulist = regex("^(\\*|\\+|-) ");
+    olist = regex("^[0-9]+\\. ");
+    preformated = regex("^[ ]{4}|\\t");
+    code = regex("^```(.*)");
+    reference_db = regex("^(!?)\\[([a-zA-Z0-9]+)\\] ?(\\[([a-zA-Z0-9]+)\\])?");
+    reference_inline = regex("^(!?)\\[([a-zA-Z0-9][^\\]]*?)\\] ?\\(<?((?:http:/|ftp:/|file:/)?/[^\\)]+?)>?\\)");
+    links = regex("^<((?:(?:http|ftp|file)://)[^\\s]+)>");
+    force_line = regex("^[ ]{2,}($|\n)");
+    refs = regex("^\\s*\\[([^\\]]+)\\]:\\s*(http://|ftp://|/|file://)");// finding references in source
 }
 
 MarkdownParser::~MarkdownParser()
@@ -43,11 +62,6 @@ void MarkdownParser::parse()
 
     define_blocks(m_lines);
 
-    /*for( string line : m_lines)
-    {
-        cout << line << endl;
-    }*/
-
 }
 
 void MarkdownParser::define_blocks(list<string>& lines, int level)
@@ -60,51 +74,55 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
         {
             if( ishrule(*line))
             {
-                (*line) = horizontal_rule_event();
                 insert_level(level);
-                insert(*line);
+                horizontal_rule_event();
                 insert_line();
-                //cout << (*line) << endl;
             }
             else if( isheadline(*line)) // header block
             {
-                (*line) = header_event(string(m_match[3]),string(m_match[2])[0]-'0');
                 insert_level(level);
-                insert(*line);
+                insert(header_event(string(m_match[3]),string(m_match[2])[0]-'0'));
                 insert_line();
-                //cout << (*line) << endl;
             }
             else if( iscodeblock(*line)) // code block
             {
                 insert_level(level);
-                insert(preformat_begin_event());
-                insert(code_begin_event(m_match[1]));
+                preformat_begin_event();
+                code_begin_event(m_match[1]);
 
                 do
                 {
                     ++line;
                     if( line == lines.end() || iscodeblock(*line))
                         break;
-                    insert(*line);
+                    string temp = "";
+                    for( size_t j = 0; j < (*line).length();++j)
+                    {
+                        replace_code_char((*line)[j]);
+                    }
                     insert_line();
                 }while(true);
-                insert(code_end_event());
-                insert(preformat_end_event());
+                code_end_event();
+                preformat_end_event();
                 insert_line();
             }
             else if( ispreformated(*line)) // code block
             {
                 insert_level(level);
                 if(level == 0)
-                    insert(preformat_begin_event());
-                insert(code_begin_event());
+                    preformat_begin_event();
+                code_begin_event();
 
                 do
                 {
-                    //insert_level(level);
                     if( ispreformated(*line))
                     {
-                        insert((*line).substr(m_match.length(0)));
+                        string lien = (*line).substr(m_match.length(1));
+                        string temp = "";
+                        for( size_t j = 0; j < lien.length();++j)
+                        {
+                            replace_code_char(lien[j]);
+                        }
                     }
                     insert_line();
                     empty_line = false;
@@ -125,16 +143,16 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
                     }
 
                 }while(true);
-                insert(code_end_event());
+                code_end_event();
                 if(level == 0)
-                    insert(preformat_end_event());
+                    preformat_end_event();
                 insert_line();
             }
             else if( isblockquote((*line))) // blockquote
             {
                 //cout << blockquote_begin_event() << endl;
                 insert_level(level);
-                insert(blockquote_begin_event());
+                blockquote_begin_event();
                 insert_line();
                 list<string> content;
                 do
@@ -182,7 +200,7 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
                     cout << "{" << content_line << "}" << endl;*/
                 //cout << blockquote_begin_event() << endl;
                 insert_level(level);
-                insert(blockquote_end_event());
+                blockquote_end_event();
                 insert_line();
             }
             else if( isunorderedlist(*line) || isorderedlist(*line)) // list block
@@ -190,9 +208,9 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
                 bool ordered = m_ordered;
                 insert_level(level);
                 if(ordered)
-                    insert(ordered_list_begin_event());//cout << ordered_list_begin_event() << endl;
+                    ordered_list_begin_event();
                 else
-                    insert( list_begin_event());//cout << list_begin_event() << endl;
+                     list_begin_event();
                 insert_line();
                 do
                 {
@@ -200,7 +218,7 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
                     {
                         //cout << list_item_begin_event() << endl;
                         insert_level(level+1);
-                        insert(list_item_begin_event());
+                        list_item_begin_event();
                         insert_line();
                         list<string> content;
                         content.push_back((*line).substr(m_match.length(0)));
@@ -250,7 +268,7 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
                         list_blocks(content, level+2);
 
                         insert_level(level+1);
-                        insert(list_item_end_event());
+                        list_item_end_event();
                         insert_line();
                     }
                     if( line == lines.end())
@@ -274,15 +292,13 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
 
                 insert_level(level);
                 if(ordered)
-                    insert(ordered_list_end_event());//cout << ordered_list_end_event() << endl;
+                    ordered_list_end_event();
                 else
-                    insert(list_end_event());//cout << list_end_event() << endl;
+                    list_end_event();
                 insert_line();
             }
             else
-            {
                 found = false;
-            }
             empty_line = false;
         }
         else if((*line).empty())
@@ -298,8 +314,10 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
         if( !found) // Normal paragraph
         {
             found = true;
-            list<string> content;
-            string cont = paragraph_begin_event();
+            string content;
+            insert_level(level);
+            paragraph_begin_event();
+            string cont = "";
             do
             {
                 cont += (*line);
@@ -311,23 +329,25 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
                 }
                 else
                 {
-                    content.push_back(cont);
-                    cont = "";
+                    content += cont;
+                    cont = "\n";
+                    for( int i = 0; i < level; i++)
+                        cont += "\t";
                 }
             }while(true);
-            cont += paragraph_end_event();
-            content.push_back(cont);
-            for( string content_line : content)
-            {
-                insert_level(level);
-                insert(content_line);
-                insert_line();
-                //cout << content_line << endl;
-            }
+
+            content += cont;
+
+            parse_line(content);
+            paragraph_end_event();
+            insert_line();
         }
 
         if( line != lines.end())
+        {
             ++line;
+            insert_line();
+        }
     }
 }
 
@@ -343,10 +363,8 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
             if( ishrule(*line))
             {
                 multiline = false;
-                (*line) = horizontal_rule_event();
-                //cout << (*line) << endl;
                 insert_level(level);
-                insert(*line);
+                horizontal_rule_event();
                 insert_line();
             }
             else if( isunorderedlist(*line) || isorderedlist(*line)) // list block
@@ -355,18 +373,17 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
                 bool ordered = m_ordered;
                 insert_level(level);
                 if(ordered)
-                    insert(ordered_list_begin_event());//cout << ordered_list_begin_event() << endl;
+                    ordered_list_begin_event();
                 else
-                    insert(list_begin_event());//cout << list_begin_event() << endl;
+                    list_begin_event();
                 insert_line();
                 do
                 {
                     if( islist(*line) )
                     {
                         insert_level(level+1);
-                        insert(list_item_begin_event());
+                        list_item_begin_event();
                         insert_line();
-                        //cout << list_item_begin_event() << endl;
                         list<string> content;
                         content.push_back((*line).substr(m_match.length(0)));
                         do
@@ -413,9 +430,9 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
                         }while(true);
 
                         list_blocks(content, level+2);
-                        //cout << list_item_end_event() << endl;
+
                         insert_level(level+1);
-                        insert(list_item_end_event());
+                        list_item_end_event();
                         insert_line();
                     }
 
@@ -440,9 +457,9 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
 
                 insert_level(level);
                 if(ordered)
-                    insert(ordered_list_end_event());//cout << ordered_list_end_event() << endl;
+                    ordered_list_end_event();
                 else
-                    insert(list_end_event());//cout << list_end_event() << endl;
+                    list_end_event();
                 insert_line();
             }
             else
@@ -466,11 +483,12 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
         if( !found) // Normal paragraph
         {
             found = true;
-            list<string> content;
+            string content;
             string cont = "";
+            insert_level(level);
             if( multiline)
             {
-                cont = paragraph_begin_event();
+                paragraph_begin_event();
             }
             do
             {
@@ -487,33 +505,41 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
                     {
                         multiline = true;
                         if( content.empty())
-                            cont = paragraph_begin_event() + cont;
+                        {
+                            paragraph_begin_event();
+                            content += cont;
+                            cont = "\n";
+                        }
                         else
-                            content.front() = paragraph_begin_event() + content.front();
+                        {
+                            paragraph_begin_event();
+                        }
                         --line;
                     }
                     break;
                 }
                 else
                 {
-                    content.push_back(cont);
-                    cont = "";
+                    content += cont;
+                    cont = "\n";
                 }
             }while(true);
+
+            //content.push_back(cont);
+            if( cont.back() == '\n')
+                cont.pop_back();
+            content += cont;
+
+            parse_line(content);
             if( multiline)
-                cont += paragraph_end_event();
-            content.push_back(cont);
-            for( string content_line : content)
-            {
-                //cout << content_line << endl;
-                insert_level(level);
-                insert(content_line);
-                insert_line();
-            }
+                paragraph_end_event();
+            insert_line();
         }
 
         if( line != lines.end())
+        {
             ++line;
+        }
     }
 }
 
@@ -532,44 +558,37 @@ bool MarkdownParser::isblockquote(string& block)
 
 bool MarkdownParser::isheadline(string& block)
 {
-    regex headline("^([ ]{0,3})<h([1-6])>([^<]*)</h[1-6]>");
     return regex_search(block, m_match, headline);
 }
 
 bool MarkdownParser::ishrule(string& block)
 {
-    regex hrule("^[ ]{0,3}<[ ]?hr[ ]?/?>");
     return regex_search(block, m_match, hrule);
 }
 
 bool MarkdownParser::islist(string& block)
 {
-    regex anylist("^(\\*|\\+|-|[0-9]+\\.)[ ]+");
     return regex_search(block,m_match, anylist);
 }
 
 bool MarkdownParser::isunorderedlist(string& block)
 {
-    regex ulist("^(\\*|\\+|-) ");
     return regex_search(block,m_match, ulist);
 }
 
 bool MarkdownParser::isorderedlist(string& block)
 {
-    regex olist("^[0-9]+\\. ");
     m_ordered = regex_search(block,m_match, olist);
     return m_ordered;
 }
 
 bool MarkdownParser::ispreformated(string& block)
 {
-    regex preformated("^[ ]{4}|\\t");
     return regex_search(block, m_match, preformated);
 }
 
 bool MarkdownParser::iscodeblock(string& block)
 {
-    regex code("^```(.*)");
     return regex_search(block, m_match, code);
 }
 
@@ -579,9 +598,9 @@ void MarkdownParser::initial_manipulation()
 
     for( string line : m_lines)
     {
-
         if( !reference_line(line))
         {
+            //cout << line << endl;
             int mode;
             if( ( mode = header_line(line)) != 0)
             {
@@ -611,6 +630,7 @@ void MarkdownParser::initial_manipulation()
             {
                 if( !temp_lines.empty() && !temp_lines.back().empty())
                     temp_lines.push_back("");
+
                 temp_lines.push_back(horizontal_rule_event());
             }
             else
@@ -668,9 +688,500 @@ void MarkdownParser::blcokquote_manipulation(list<string>& lines)
     lines = temp_lines;
 }
 
+void MarkdownParser::parse_line(string& s)
+{
+    for( size_t i = 0; i < s.length(); ++i)
+    {
+        size_t pos = 0;
+        string temp = s.substr(i);
+        if( (pos = find_bold(temp)))
+        {
+            i+= pos;
+        }
+        else if( (pos = find_italic(temp)))
+        {
+            i += pos;
+        }
+        else if( (pos = find_comment(temp)))
+        {
+            //cout << "found comment" << endl;
+            i += pos;
+        }
+        else if( (pos = find_links(temp)))
+        {
+            //cout << "found link" << endl;
+            i += pos;
+        }
+        else if( (pos = find_references(temp)))
+        {
+         //   cout << "found references" << endl;
+            i += pos;
+        }
+        else if( (pos = find_htmlTags(temp)))
+        {
+         //   cout << "found htmltags" << endl;
+            i += pos;
+        }
+        else if( (pos = find_inline_code(temp)))
+        {
+         //   cout << "found inline code" << endl;
+            i += pos;
+        }
+        else if( (pos = find_new_line(temp)))
+        {
+            i += pos;
+        }
+        else if( (pos = find_unicode(temp)))
+        {
+         //   cout << "found spezial char" << endl;
+            i += pos;
+        }
+        else if( temp[0] == '\\')
+        {
+            if( temp.length() > 1)
+            {
+                switch(temp[1])
+                {
+                    case '*':
+                        insert('*');
+                        ++i;
+                    break;
+                    case '_':
+                        insert('_');
+                        ++i;
+                    break;
+                    case '[':
+                        insert('[');
+                        ++i;
+                    break;
+                    case '\\':
+                        insert('\\');
+                        ++i;
+                    break;
+                    case '`':
+                        insert('`');
+                        ++i;
+                    break;
+                }
+            }
+            else
+                replace_char(temp[0]);
+        }
+        else
+        {
+            replace_char(temp[0]);
+        }
+    }
+}
+
+void MarkdownParser::parse_code_line(string& s)
+{
+    for( size_t i = 0; i < s.length(); ++i)
+    {
+        replace_code_char(s[i]);
+    }
+}
+
+int MarkdownParser::find_bold(string& s)
+{
+    size_t len = 0;
+
+    if( regex_search(s, m_match, bold))
+    {
+        len = m_match.length(0)-1;
+        insert("<strong>");
+        string strong_text = m_match[2];
+        for( size_t j = 0; j < strong_text.length(); ++j)
+        {
+            string temp = strong_text.substr(j);
+            size_t pos;
+            if( (pos = find_italic(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_unicode(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_htmlTags(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_references(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_links(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_comment(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_inline_code(temp)))
+            {
+                j+=pos;
+            }
+            else if( temp[0] == '\\')
+            {
+                if( temp.length() > 1)
+                {
+                    switch(temp[1])
+                    {
+                        case '*':
+                            insert('*');
+                            ++j;
+                        break;
+                        case '_':
+                            insert('_');
+                            ++j;
+                        break;
+                        case '[':
+                            insert('[');
+                            ++j;
+                        break;
+                        case '\\':
+                            insert('\\');
+                            ++j;
+                        break;
+                        case 96:
+                            insert(96);
+                            ++j;
+                        break;
+                    }
+                }
+                else
+                    replace_char(temp[0]);
+            }
+            else
+            {
+                replace_char(temp[0]);
+            }
+        }
+        insert("</strong>");
+    }
+
+    return len;
+}
+
+int MarkdownParser::find_italic(string& s)
+{
+    size_t len = 0;
+
+    if( regex_search(s, m_match, italic))
+    {
+        len = m_match.length(0)-1;
+        insert("<em>");
+        string italic_text = m_match[2];
+        for( size_t j = 0; j < italic_text.length(); ++j)
+        {
+            string temp = italic_text.substr(j);
+            size_t pos;
+            if( (pos = find_unicode(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_htmlTags(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_references(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_links(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_comment(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_inline_code(temp)))
+            {
+                j+=pos;
+            }
+            else if( temp[0] == '\\')
+            {
+                if( temp.length() > 1)
+                {
+                    switch(temp[1])
+                    {
+                        case '*':
+                            insert('*');
+                            ++j;
+                        break;
+                        case '_':
+                            insert('_');
+                            ++j;
+                        break;
+                        case '[':
+                            insert('[');
+                            ++j;
+                        break;
+                        case '\\':
+                            insert('\\');
+                            ++j;
+                        break;
+                        case 96:
+                            insert(96);
+                            ++j;
+                        break;
+                    }
+                }
+                else
+                    replace_char(temp[0]);
+            }
+            else
+            {
+                replace_char(temp[0]);
+            }
+        }
+        insert("</em>");
+    }
+
+    return len;
+}
+
+int MarkdownParser::find_unicode(string& s)
+{
+    size_t len = 0;
+
+    if( regex_search(s, m_match, unicodeChar))
+    {
+        len = m_match.length(0)-1;
+        string unicode = m_match[0];
+        insert(unicode);
+    }
+
+    return len;
+}
+
+int MarkdownParser::find_comment(string& s)
+{
+    size_t len = 0;
+
+    if( regex_search(s, m_match, comment))
+    {
+        len = m_match.length(0)-1;
+        insert("<!--");
+        insert(m_match[1]);
+        insert("-->");
+    }
+
+    return len;
+}
+
+int MarkdownParser::find_htmlTags(string& s)
+{
+    size_t len = 0;
+
+   if( regex_search(s, m_match, htmlTags))
+    {
+        len = m_match.length(0)-1;
+        //cout << m_match[1] << endl;
+        string tag = m_match[1];
+        string paras = m_match[2];
+        string text = m_match[3];
+        insert("<" + tag + paras +">");
+        for( size_t j = 0; j < text.length(); ++j)
+        {
+            size_t pos;
+            string temp = text.substr(j);
+            if( (pos = find_htmlTags(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_inline_code(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_bold(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_italic(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_unicode(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_comment(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_references(temp)))
+            {
+                j+=pos;
+            }
+            else if( (pos = find_links(temp)))
+            {
+                j+=pos;
+            }
+            else if( temp[0] == '\\')
+            {
+                if( temp.length() > 1)
+                {
+                    switch(temp[1])
+                    {
+                        case '*':
+                            insert('*');
+                            ++j;
+                        break;
+                        case '_':
+                            insert('_');
+                            ++j;
+                        break;
+                        case '[':
+                            insert('[');
+                            ++j;
+                        break;
+                        case '\\':
+                            insert('\\');
+                            ++j;
+                        break;
+                        case 96:
+                            insert(96);
+                            ++j;
+                        break;
+                    }
+                }
+                else
+                    replace_char(temp[0]);
+            }
+            else
+            {
+                replace_char(temp[0]);
+            }
+        }
+        insert("</" + tag + ">");
+    }
+
+    return len;
+}
+
+int MarkdownParser::find_inline_code(string& s)
+{
+    size_t len = 0;
+
+    if( regex_search(s, m_match, inline_code))
+    {
+        len = m_match.length(0)-1;
+        string code_string = m_match.str(2);
+        for( size_t j = 0; j < code_string.length(); j++)
+        {
+            replace_code_char(code_string[j]);
+        }
+    }
+
+    return len;
+}
+
+int MarkdownParser::find_references(string& s)
+{
+    size_t len = 0;
+
+    if( regex_search(s, m_match, reference_inline))
+    {
+        len = m_match.length(0)-1;
+        bool image = m_match.length(1) > 0;
+        Ref dummy;
+        dummy.name = m_match.str(2);
+        dummy.link = m_match.str(3);
+
+        if( image)
+            generate_img(dummy, dummy.name);
+        else
+            generate_link(dummy, dummy.name);
+    }
+    else if( regex_search(s, m_match, reference_db))
+    {
+        len = m_match.length(0)-1;
+        bool image = m_match.length(1) > 0;
+
+        if( m_match.length(3) != 0)
+        {
+            string name = m_match.str(2);
+            string temp_ref = m_match.str(3).substr(1,m_match.length(3)-2);
+            toLower(temp_ref);
+            Ref refs = m_refs[temp_ref];
+            if( refs.link.empty())
+            {
+                string dummy = m_match.str(0);
+                for( size_t j = 0; j < dummy.length(); ++j)
+                {
+                    replace_char(dummy[j]);
+                }
+            }
+            else
+            {
+                if( image)
+                    generate_img(refs, name);
+                else
+                    generate_link(refs, name);
+            }
+        }
+        else
+        {
+            string name = m_match.str(2);
+            toLower(name);
+            Ref refs = m_refs[name];
+            name = m_match.str(2);
+            if( refs.link.empty())
+            {
+                for( size_t j = 0; j < name.length(); ++j)
+                {
+                    replace_char(name[j]);
+                }
+            }
+            else
+            {
+                if( image)
+                    generate_img(refs, name);
+                else
+                    generate_link(refs, name);
+            }
+        }
+    }
+
+    return len;
+}
+
+int MarkdownParser::find_links(string& s)
+{
+    size_t len = 0;
+
+    if( regex_search(s, m_match, links))
+    {
+        len = m_match.length(0)-1;
+        Ref refs;
+        refs.link = m_match.str(1);
+        generate_link(refs, refs.link);
+    }
+
+    return len;
+}
+
+int MarkdownParser::find_new_line(string& s)
+{
+    size_t len = 0;
+
+    if( regex_search(s, m_match, force_line))
+    {
+        len = m_match.length(0)-1;
+        insert(" <br />");
+        if( m_match.length(1))
+        insert(" \n");
+    }
+
+    return len;
+}
+
 bool MarkdownParser::reference_line(string& line)
 {
-    regex refs("^\\s*\\[([^\\]]+)\\]:\\s*(http://|ftp://|/|file://)"); // finding references in source
     smatch match;
 
     if( regex_search(line, match, refs))
@@ -706,8 +1217,6 @@ int MarkdownParser::header_line(string& line)
 {
     int mode = 0;
     smatch match;
-    regex header_rule1("^(=+|-+)[ \\t\\f]*$");
-    regex header_rule2("^(#{1,})([^#]*?)(#*)$");
 
     if( regex_search(line, match, header_rule1))
     {
@@ -737,8 +1246,6 @@ int MarkdownParser::header_line(string& line)
 bool MarkdownParser::horizontal_rule_line(string& line)
 {
     smatch match;
-    regex horizontal_rule1("^[ ]{0,3}\\*([ ]{0,2}\\*){2,}[ \\t\\f]*$");
-    regex horizontal_rule2("^[ ]{0,3}-([ ]{0,2}-){2,}[ \\t\\f]*$");
     return (regex_search(line, match, horizontal_rule1)
          || regex_search(line, match, horizontal_rule2));
 
@@ -752,5 +1259,13 @@ void MarkdownParser::insert_level(int level)
 
 void MarkdownParser::insert_line()
 {
-    insert("\n");
+    if( m_content.back() != '\n')
+        insert("\n");
+    else
+    {
+        m_content.pop_back();
+        if( m_content.back() != '\n')
+            insert("\n");
+        m_content.push_back('\n');
+    }
 }

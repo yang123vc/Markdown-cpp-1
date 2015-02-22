@@ -23,6 +23,7 @@ class Parser
         list<string> extract_parameter( string& line);
 
         void insert( string content);
+        void insert( const char& c);
 
     protected:
 
