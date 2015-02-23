@@ -11,20 +11,20 @@ MarkdownParser::MarkdownParser()
     unicodeChar = regex("^&([a-zA-Z]+|#[0-9]+);");
     comment = regex("^<!--(.*?)-->");
     htmlTags = regex("^<([a-zA-Z][a-zA-Z0-9]*)\\b([^>]*)>([^\n\r]*?)</\\1>");
-    inline_code = regex("^(``|`)(.+?)\\1");
+    inline_code = regex("^([`]{1,2})(.+?)\\1");
     headline = regex("^([ ]{0,3})<h([1-6])>([^<]*)</h[1-6]>");
     header_rule1 = regex("^(=+|-+)[ \\t\\f]*$");
     header_rule2 = regex("^(#{1,})([^#]*?)(#*)$");
     horizontal_rule1 = regex("^[ ]{0,3}\\*([ ]{0,2}\\*){2,}[ \\t\\f]*$");
-    horizontal_rule2 = regex("^[ ]{0,3}-([ ]{0,2}-){2,}[ \\t\\f]*$");
+    horizontal_rule2 = regex("^[ ]{0,3}(-|_)([ ]{0,2}\\1){2,}[ \\t\\f]*$");
     hrule = regex("^[ ]{0,3}<[ ]?hr[ ]?/?>");
     anylist = regex("^(\\*|\\+|-|[0-9]+\\.)[ ]+");
     ulist = regex("^(\\*|\\+|-) ");
     olist = regex("^[0-9]+\\. ");
-    preformated = regex("^[ ]{4}|\\t");
+    preformated = regex("^([ ]{4}|\\t)");
     code = regex("^```(.*)");
-    reference_db = regex("^(!?)\\[([a-zA-Z0-9]+)\\] ?(\\[([a-zA-Z0-9]+)\\])?");
-    reference_inline = regex("^(!?)\\[([a-zA-Z0-9][^\\]]*?)\\] ?\\(<?((?:http:/|ftp:/|file:/)?/[^\\)]+?)>?\\)");
+    reference_db = regex("^(!?)\\[([^\\]]+)\\] ?(\\[([a-zA-Z0-9]+)\\])?");
+    reference_inline = regex("^(!?)\\[([^\\]]+)\\] ?\\(<?((?:http:/|ftp:/|file:/)?/[^\\)]+?)>?\\)");
     links = regex("^<((?:(?:http|ftp|file)://)[^\\s]+)>");
     force_line = regex("^[ ]{2,}($|\n)");
     refs = regex("^\\s*\\[([^\\]]+)\\]:\\s*(http://|ftp://|/|file://)");// finding references in source
@@ -75,7 +75,7 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
             if( ishrule(*line))
             {
                 insert_level(level);
-                horizontal_rule_event();
+                insert(horizontal_rule_event());
                 insert_line();
             }
             else if( isheadline(*line)) // header block
@@ -109,16 +109,16 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
             else if( ispreformated(*line)) // code block
             {
                 insert_level(level);
-                if(level == 0)
-                    preformat_begin_event();
+                preformat_begin_event();
                 code_begin_event();
-
+                empty_line = false;
                 do
                 {
+                    if( empty_line)
+                        insert_line();
                     if( ispreformated(*line))
                     {
                         string lien = (*line).substr(m_match.length(1));
-                        string temp = "";
                         for( size_t j = 0; j < lien.length();++j)
                         {
                             replace_code_char(lien[j]);
@@ -132,6 +132,7 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
                     else if( (*line).empty())
                     {
                         empty_line = true;
+                        ++line;
                     }
 
                     if( isblockquote(*line) || !ispreformated(*line))
@@ -144,8 +145,7 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
 
                 }while(true);
                 code_end_event();
-                if(level == 0)
-                    preformat_end_event();
+                preformat_end_event();
                 insert_line();
             }
             else if( isblockquote((*line))) // blockquote
@@ -164,7 +164,7 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
                         if( pos == string::npos)
                             content.push_back("");
                         else
-                            content.push_back(temp.substr(pos));
+                            content.push_back(temp.substr(pos>0));
                     }
                     else if( ispreformated(*line))
                     {
@@ -322,7 +322,7 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
             {
                 cont += (*line);
                 ++line;
-                if( (line == lines.end()) || isheadline(*line) || isblock(*line)||(*line).empty())
+                if( (line == lines.end()) || isheadline(*line) ||(*line).empty())
                 {
                     --line;
                     break;
@@ -364,7 +364,7 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
             {
                 multiline = false;
                 insert_level(level);
-                horizontal_rule_event();
+                insert(horizontal_rule_event());
                 insert_line();
             }
             else if( isunorderedlist(*line) || isorderedlist(*line)) // list block
@@ -724,7 +724,7 @@ void MarkdownParser::parse_line(string& s)
         }
         else if( (pos = find_inline_code(temp)))
         {
-         //   cout << "found inline code" << endl;
+            //cout << "found inline code" << endl;
             i += pos;
         }
         else if( (pos = find_new_line(temp)))
@@ -740,29 +740,7 @@ void MarkdownParser::parse_line(string& s)
         {
             if( temp.length() > 1)
             {
-                switch(temp[1])
-                {
-                    case '*':
-                        insert('*');
-                        ++i;
-                    break;
-                    case '_':
-                        insert('_');
-                        ++i;
-                    break;
-                    case '[':
-                        insert('[');
-                        ++i;
-                    break;
-                    case '\\':
-                        insert('\\');
-                        ++i;
-                    break;
-                    case '`':
-                        insert('`');
-                        ++i;
-                    break;
-                }
+                i += check_escaped_char(temp[1]);
             }
             else
                 replace_char(temp[0]);
@@ -789,7 +767,7 @@ int MarkdownParser::find_bold(string& s)
     if( regex_search(s, m_match, bold))
     {
         len = m_match.length(0)-1;
-        insert("<strong>");
+        text_bold_begin_event();
         string strong_text = m_match[2];
         for( size_t j = 0; j < strong_text.length(); ++j)
         {
@@ -827,29 +805,7 @@ int MarkdownParser::find_bold(string& s)
             {
                 if( temp.length() > 1)
                 {
-                    switch(temp[1])
-                    {
-                        case '*':
-                            insert('*');
-                            ++j;
-                        break;
-                        case '_':
-                            insert('_');
-                            ++j;
-                        break;
-                        case '[':
-                            insert('[');
-                            ++j;
-                        break;
-                        case '\\':
-                            insert('\\');
-                            ++j;
-                        break;
-                        case 96:
-                            insert(96);
-                            ++j;
-                        break;
-                    }
+                    j += check_escaped_char(temp[1]);
                 }
                 else
                     replace_char(temp[0]);
@@ -859,7 +815,7 @@ int MarkdownParser::find_bold(string& s)
                 replace_char(temp[0]);
             }
         }
-        insert("</strong>");
+        text_bold_end_event();
     }
 
     return len;
@@ -872,7 +828,7 @@ int MarkdownParser::find_italic(string& s)
     if( regex_search(s, m_match, italic))
     {
         len = m_match.length(0)-1;
-        insert("<em>");
+        text_italic_begin_event();
         string italic_text = m_match[2];
         for( size_t j = 0; j < italic_text.length(); ++j)
         {
@@ -906,29 +862,7 @@ int MarkdownParser::find_italic(string& s)
             {
                 if( temp.length() > 1)
                 {
-                    switch(temp[1])
-                    {
-                        case '*':
-                            insert('*');
-                            ++j;
-                        break;
-                        case '_':
-                            insert('_');
-                            ++j;
-                        break;
-                        case '[':
-                            insert('[');
-                            ++j;
-                        break;
-                        case '\\':
-                            insert('\\');
-                            ++j;
-                        break;
-                        case 96:
-                            insert(96);
-                            ++j;
-                        break;
-                    }
+                    j += check_escaped_char(temp[1]);
                 }
                 else
                     replace_char(temp[0]);
@@ -938,7 +872,7 @@ int MarkdownParser::find_italic(string& s)
                 replace_char(temp[0]);
             }
         }
-        insert("</em>");
+        text_italic_end_event();
     }
 
     return len;
@@ -965,9 +899,9 @@ int MarkdownParser::find_comment(string& s)
     if( regex_search(s, m_match, comment))
     {
         len = m_match.length(0)-1;
-        insert("<!--");
+        comment_begin_event();
         insert(m_match[1]);
-        insert("-->");
+        comment_end_event();
     }
 
     return len;
@@ -984,7 +918,7 @@ int MarkdownParser::find_htmlTags(string& s)
         string tag = m_match[1];
         string paras = m_match[2];
         string text = m_match[3];
-        insert("<" + tag + paras +">");
+        html_begin_event(tag, paras);
         for( size_t j = 0; j < text.length(); ++j)
         {
             size_t pos;
@@ -1025,29 +959,7 @@ int MarkdownParser::find_htmlTags(string& s)
             {
                 if( temp.length() > 1)
                 {
-                    switch(temp[1])
-                    {
-                        case '*':
-                            insert('*');
-                            ++j;
-                        break;
-                        case '_':
-                            insert('_');
-                            ++j;
-                        break;
-                        case '[':
-                            insert('[');
-                            ++j;
-                        break;
-                        case '\\':
-                            insert('\\');
-                            ++j;
-                        break;
-                        case 96:
-                            insert(96);
-                            ++j;
-                        break;
-                    }
+                    j += check_escaped_char(temp[1]);
                 }
                 else
                     replace_char(temp[0]);
@@ -1057,7 +969,7 @@ int MarkdownParser::find_htmlTags(string& s)
                 replace_char(temp[0]);
             }
         }
-        insert("</" + tag + ">");
+        html_end_event(tag);
     }
 
     return len;
@@ -1071,10 +983,12 @@ int MarkdownParser::find_inline_code(string& s)
     {
         len = m_match.length(0)-1;
         string code_string = m_match.str(2);
+        code_begin_event();
         for( size_t j = 0; j < code_string.length(); j++)
         {
             replace_code_char(code_string[j]);
         }
+        code_end_event();
     }
 
     return len;
@@ -1172,9 +1086,9 @@ int MarkdownParser::find_new_line(string& s)
     if( regex_search(s, m_match, force_line))
     {
         len = m_match.length(0)-1;
-        insert(" <br />");
+        new_line_event();
         if( m_match.length(1))
-        insert(" \n");
+            insert_line();
     }
 
     return len;

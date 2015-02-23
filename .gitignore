@@ -11,3 +11,4 @@ bin/
 obj/
 lib2/
 .cccc/
+gmon.out

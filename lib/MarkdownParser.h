@@ -117,8 +117,23 @@ class MarkdownParser : public Parser
         virtual void code_begin_event(string lang = "")=0;
         virtual void code_end_event()=0;
 
+        virtual void comment_begin_event()=0;
+        virtual void comment_end_event()=0;
+
+        virtual void html_begin_event(string& tag, string& paras)=0;
+        virtual void html_end_event(string& tag)=0;
+
+        virtual void text_bold_begin_event()=0;
+        virtual void text_bold_end_event()=0;
+
+        virtual void text_italic_begin_event()=0;
+        virtual void text_italic_end_event()=0;
+
+        virtual void new_line_event()=0;
+
         virtual void replace_code_char(const char& c)=0;
         virtual void replace_char(const char& c)=0;
+        virtual int  check_escaped_char( const char& c)=0;
 
         virtual void generate_link( Ref ref, string& name)=0;
         virtual void generate_img( Ref src, string& alt)=0;

@@ -111,6 +111,52 @@ void HTMLParser::code_end_event()
     insert( "</code>");
 }
 
+void HTMLParser::new_line_event()
+{
+    insert(" <br />");
+}
+
+void HTMLParser::comment_begin_event()
+{
+    insert("<!--");
+}
+
+void HTMLParser::comment_end_event()
+{
+    insert("-->");
+}
+
+void HTMLParser::html_begin_event(string& tag, string& paras)
+{
+    insert("<" + tag + paras + ">");
+}
+
+void HTMLParser::html_end_event(string& tag)
+{
+    insert("</"+tag+">");
+}
+
+void HTMLParser::text_bold_begin_event()
+{
+    insert("<strong>");
+}
+
+void HTMLParser::text_bold_end_event()
+{
+    insert("</strong>");
+}
+
+void HTMLParser::text_italic_begin_event()
+{
+    insert("<em>");
+}
+
+void HTMLParser::text_italic_end_event()
+{
+    insert("</em>");
+}
+
+
 void HTMLParser::replace_code_char(const char& c)
 {
     switch( c)
@@ -146,6 +192,36 @@ void HTMLParser::replace_char(const char& c)
             insert( c);
         break;
     }
+}
+
+int HTMLParser::check_escaped_char(const char& c)
+{
+    int len = 1;
+    switch(c)
+    {
+        case '*':
+        case '_':
+        case '-':
+        case '+':
+        case '(':
+        case ')':
+        case '[':
+        case ']':
+        case '{':
+        case '}':
+        case '>':
+        case '\\':
+        case '#':
+        case '`':
+        case '.':
+        case '!':
+            insert(c);
+        break;
+        default:
+            len = 0;
+        break;
+    }
+    return len;
 }
 
 void HTMLParser::generate_link(Ref ref, string& name)

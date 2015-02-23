@@ -20,9 +20,9 @@ int main(int argc, char** argv)
 
     string content;
     if( argc == 1)
-        content = get_file_contents(TEST_CUSTOM);
+        content = get_file_contents(TEST_AMPS);
     else
-        content = get_file_contents(TEST_CUSTOM);
+        content = get_file_contents(files[atoi(argv[1])]);
     HTMLParser* parser = new HTMLParser();
     parser->print_headers(false);
     string parsed = parse( content, parser);
