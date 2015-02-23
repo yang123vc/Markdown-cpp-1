@@ -1,5 +1,5 @@
 *.exe
-./markdown
+markdown
 *.o
 *.a
 *.def
