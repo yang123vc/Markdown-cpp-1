@@ -10,3 +10,4 @@ doxygen/
 bin/
 obj/
 lib2/
+.cccc/
