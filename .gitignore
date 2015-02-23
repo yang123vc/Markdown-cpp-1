@@ -1,10 +1,13 @@
 *.exe
+./markdown
 *.o
 *.a
 *.def
 *.layout
 *.depend
 *.save
+*.dll
+*.so
 CppCheckResults.xml
 doxygen/
 bin/
