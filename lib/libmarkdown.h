@@ -2,7 +2,7 @@
 #define LIB_MARKDOWN_H_
 
 #include <string>
-#include "Parser.h"
+#include "parser.h"
 
 using namespace std;
 

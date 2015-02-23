@@ -1,7 +1,7 @@
 #ifndef HTMLPARSER_H
 #define HTMLPARSER_H
 
-#include "MarkdownParser.h"
+#include "markdownParser.h"
 
 
 class HTMLParser : public MarkdownParser

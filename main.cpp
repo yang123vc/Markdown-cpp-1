@@ -6,7 +6,7 @@ using namespace std;
 #include "test.h"
 #include "file.h"
 #include "lib/libmarkdown.h"
-#include "lib/HTMLParser.h"
+#include "lib/htmlParser.h"
 
 const char* files[50] = {TEST_AMPS,TEST_AUTO_LINKS,TEST_BACKSLASH,TEST_BLOCKQUOTES,TEST_HARD_WRAPP,
                       TEST_HORIZONTAL_RULES,TEST_INLINE_HTML_ADV,TEST_INLINE_HTML_SIMPLE,TEST_INLINE_HTML_COM,
