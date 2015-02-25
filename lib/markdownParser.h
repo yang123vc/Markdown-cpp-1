@@ -53,29 +53,43 @@ class MarkdownParser : public Parser
         void define_blocks(list<string>& lines, int level = 0);
         void list_blocks(list<string>& lines, int level);
 
-        inline bool isblock( string& block);
-        inline bool isblockquote( string& block);
-        inline bool isheadline( string& block);
-        inline bool ishrule(string& block);
-        inline bool islist(string& block);
-        inline bool isunorderedlist(string& block);
-        inline bool isorderedlist(string& block);
-        inline bool ispreformated( string& block);
-        inline bool iscodeblock(string& block);
+        void hrule_block(list<string>::iterator& line, int level, list<string>::iterator ende);
+        void headline_block(list<string>::iterator& line, int level, list<string>::iterator ende);
+        void code_block(list<string>::iterator& line, int level, list<string>::iterator ende);
+        void preformated_block(list<string>::iterator& line, int level, list<string>::iterator ende);
+        void blockquote_block(list<string>::iterator& line, int level, list<string>::iterator ende);
+        void list_block(list<string>::iterator& line, int level, list<string>::iterator ende);
+        void html_block(list<string>::iterator& line, int level, list<string>::iterator ende);
+        void comment_block(list<string>::iterator& line, int level, list<string>::iterator ende);
+        void paragraph_block(list<string>::iterator& line, int level, list<string>::iterator ende);
+        void normal_block(list<string>::iterator& line, int level, bool& multiline, list<string>::iterator ende);
+
+        bool isblock( string& line);
+        bool isblockquote( string& line);
+        bool isheadline( string& line);
+        bool ishrule(string& line);
+        bool ishtmlblock(string& line);
+        bool ishtmlcomment(string& line);
+        bool islist(string& line);
+        bool isunorderedlist(string& line);
+        bool isorderedlist(string& line);
+        bool ispreformated( string& line);
+        bool iscodeblock(string& line);
 
         void initial_manipulation();
-        void blcokquote_manipulation(list<string>& lines);
+        void blockquote_manipulation(list<string>& lines);
 
         void parse_line(string& s);
         void parse_code_line(string& s);
 
+        int find_word(string& s);
         int find_bold(string& s);
         int find_italic(string& s);
         int find_unicode(string& s);
         int find_comment(string& s);
         int find_htmlTags(string& s);
-      //int find_open_htmlTags(string& s);
-      //int find_close_htmlTags(string& s);
+        int find_open_htmlTags(string& s);
+        int find_close_htmlTags(string& s);
         int find_inline_code(string& s);
         int find_references(string& s);
         int find_links(string& s);
@@ -88,13 +102,15 @@ class MarkdownParser : public Parser
         void insert_level(int level);
         void insert_line();
 
+        size_t get_tag_balance(string& tag, string& line, int& balance);
+
     protected:
 
         virtual void footer_event()=0;
         virtual void header_event()=0;
 
-        virtual string header_event(string line, int level)=0;
-        virtual string horizontal_rule_event()=0;
+        virtual string header_event(string line, int level, string paras="")=0;
+        virtual string horizontal_rule_event(string paras = "")=0;
 
         virtual void paragraph_begin_event()=0;
         virtual void paragraph_end_event()=0;
@@ -132,39 +148,48 @@ class MarkdownParser : public Parser
         virtual void new_line_event()=0;
 
         virtual void replace_code_char(const char& c)=0;
+        virtual void replace_code_char(string& line)=0;
         virtual void replace_char(const char& c)=0;
         virtual int  check_escaped_char( const char& c)=0;
+        virtual string hide_chars(string line)=0;
 
         virtual void generate_link( Ref ref, string& name)=0;
+        virtual void generate_link_no_replace( Ref ref, string& name)=0;
         virtual void generate_img( Ref src, string& alt)=0;
 
     private:
 
         map<string,Ref> m_refs;
 
-        regex bold;
-        regex italic;
-        regex unicodeChar;
-        regex comment;
-        regex htmlTags;
-        regex inline_code;
-        regex headline;
-        regex header_rule1;
-        regex header_rule2;
-        regex horizontal_rule1;
-        regex horizontal_rule2;
-        regex hrule;
-        regex anylist;
-        regex ulist;
-        regex olist;
-        regex preformated;
-        regex code;
-        regex reference_db;
-        regex reference_inline;
-        regex links;
-        regex force_line;
-        regex refs;
-
+        regex m_bold;
+        regex m_italic;
+        regex m_unicodeChar;
+        regex m_comment;
+        regex m_htmlTags;
+        regex m_htmlOpenTag;
+        regex m_htmlblock;
+        regex m_htmlcomment;
+        regex m_htmlCloseTag;
+        regex m_htmlTag;
+        regex m_inline_code;
+        regex m_headline;
+        regex m_header_rule1;
+        regex m_header_rule2;
+        regex m_horizontal_rule1;
+        regex m_horizontal_rule2;
+        regex m_hrule;
+        regex m_anylist;
+        regex m_ulist;
+        regex m_olist;
+        regex m_preformated;
+        regex m_code;
+        regex m_reference_db;
+        regex m_reference_inline;
+        regex m_links;
+        regex m_force_line;
+        regex m_ref;
+        regex m_word;
+        regex m_email;
 
         smatch m_match;
 

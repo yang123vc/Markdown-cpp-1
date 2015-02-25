@@ -17,8 +17,8 @@ class HTMLParser : public MarkdownParser
         void footer_event();
         void header_event();
 
-        string header_event(string line, int level);
-        string horizontal_rule_event();
+        string header_event(string line, int level, string paras);
+        string horizontal_rule_event(string paras);
 
         void paragraph_begin_event();
         void paragraph_end_event();
@@ -56,10 +56,13 @@ class HTMLParser : public MarkdownParser
         void new_line_event();
 
         void replace_code_char(const char& c);
+        void replace_code_char(string& line);
         void replace_char(const char& c);
         int  check_escaped_char(const char& c);
+        string hide_chars(string line);
 
         void generate_link( Ref ref, string& name);
+        void generate_link_no_replace(Ref ref, string& name);
         void generate_img( Ref src, string& alt);
 
     private:

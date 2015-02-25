@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <algorithm>
 
 HTMLParser::HTMLParser()
 {
@@ -25,16 +26,21 @@ void HTMLParser::header_event()
 
 
 
-string HTMLParser::header_event(string line, int level)
+string HTMLParser::header_event(string line, int level, string paras)
 {
-    char buffer[line.length() + 12];
-    sprintf(buffer, "<h%d>%s</h%d>", level, line.c_str(), level);
+    char buffer[line.length() + 12 + paras.length()];
+    sprintf(buffer, "<h%d%s>%s</h%d>", level, paras.c_str(), line.c_str(), level);
     return buffer;
 }
 
-string HTMLParser::horizontal_rule_event()
+string HTMLParser::horizontal_rule_event(string paras)
 {
-    return "<hr />";
+    if( paras.empty())
+        return "<hr />";
+    else
+    {
+        return "<hr" + paras + "/>";
+    }
 }
 
 void HTMLParser::paragraph_begin_event()
@@ -170,10 +176,45 @@ void HTMLParser::replace_code_char(const char& c)
         case '&':
             insert( "&amp;");
         break;
+
+        case '\t':
+            insert("    ");
+        break;
+
         default:
             insert( c);
         break;
     }
+}
+
+void HTMLParser::replace_code_char(string& line)
+{
+
+    string temp = "";
+    for( char c : line)
+    {
+        if( c == '<')
+        {
+            temp += "&lt;";
+        }
+        else if( c == '>')
+        {
+            temp += "&gt;";
+        }
+        else if( c == '&')
+        {
+            temp += "&amp;";
+        }
+        else if( c == '\t')
+        {
+            temp += "    ";
+        }
+        else
+        {
+            temp += c;
+        }
+    }
+    insert(temp);
 }
 
 void HTMLParser::replace_char(const char& c)
@@ -186,6 +227,26 @@ void HTMLParser::replace_char(const char& c)
 
         case '<':
             insert( "&lt;");
+        break;
+
+        case '>':
+            insert( "&gt;");
+        break;
+
+        case '\"':
+            insert("&quot;");
+        break;
+
+        case '\t':
+            insert("    ");
+        break;
+
+        case '^':
+            insert("&circ;");
+        break;
+
+        case '~':
+            insert("&tilde;");
         break;
 
         default:
@@ -224,11 +285,43 @@ int HTMLParser::check_escaped_char(const char& c)
     return len;
 }
 
+string HTMLParser::hide_chars(string line)
+{
+    string hidden ="";
+    for( char c : line)
+    {
+        char buffer[20];
+        sprintf(buffer, "&#x%x;", c);
+        hidden += buffer;
+    }
+    return hidden;
+}
+
+void HTMLParser::generate_link_no_replace(Ref ref, string& name)
+{
+    insert("<a href='");
+    insert( ref.link);
+    if( !ref.title.empty())
+    {
+        insert("' title='");
+        insert(ref.title);
+    }
+    insert("'>");
+    insert( name);
+    insert("</a>");
+}
+
 void HTMLParser::generate_link(Ref ref, string& name)
 {
     insert("<a href='");
     for( char c : ref.link)
         replace_char(c);
+    if( !ref.title.empty())
+    {
+        insert("' title='");
+        for( char c : ref.title)
+            replace_char(c);
+    }
     insert("'>");
     for( char c : name)
         replace_char(c);

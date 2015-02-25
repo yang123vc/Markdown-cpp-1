@@ -1,6 +1,9 @@
 #include "parser.h"
 
+#include "functions.h"
+
 #include <string.h>
+#include <iostream>
 
 void Parser::set_lines(list<string>& lines)
 {
@@ -15,39 +18,28 @@ string Parser::get_content()
 list<string> Parser::extract_parameter(string& line)
 {
     list<string> params;
-    char para[512];
-    int j = 0;
-    bool wasSpace = false;
 
     for( size_t i = 0; i < line.length(); i++)
     {
-        char c = line[i];
-        if( isspace(c))
+        if( isspace(line[i]))
+            continue;
+        else if( line[i] == '\"' || line[i] == '\'')
         {
-            if( !wasSpace)
-            {
-                para[j] = '\0';
-                params.push_back(para);
-                j = 0;
-                wasSpace = true;
-            }
-        }
-        else if( c == '\"' || c == '\'')
-        {
-            wasSpace = false;
-            while( (i < line.length()) && (line[i] != c))
-                para[j++] = line[++i];
+            char c = line[i++];
+            string temp = "";
+            while( i < line.length() && (line[i] != c))
+                temp += line[i++];
+            cout << temp << endl;
+            params.push_back(temp);
         }
         else
         {
-            para[j++] = c;
-            wasSpace = false;
+            string temp = "";
+            while( i < line.length() && !isspace(line[i]))
+                temp += line[i++];
+            cout << temp << endl;
+            params.push_back(temp);
         }
-    }
-    if( j!= 0)
-    {
-        para[j] = '\0';
-        params.push_back(para);
     }
 
     return params;

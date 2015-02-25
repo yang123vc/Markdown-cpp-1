@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 
     string content;
     if( argc == 1)
-        content = get_file_contents(TEST_AMPS);
+        content = get_file_contents(files[13]);
     else
         content = get_file_contents(files[atoi(argv[1])]);
     HTMLParser* parser = new HTMLParser();

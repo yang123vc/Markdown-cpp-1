@@ -1,6 +1,7 @@
 #include "libmarkdown.h"
 
 #include <sstream>
+#include <iostream>
 
 /** \brief splits content in a list line by line
  *
@@ -38,12 +39,9 @@ list<string> split_lines(string& content){
 string parse(string& content, Parser* parser)
 {
     list<string> lines = split_lines(content);
-
     parser->add_header();
     parser->set_lines(lines);
-
     parser->parse();
-
     parser->add_footer();
 
     return parser->get_content();
