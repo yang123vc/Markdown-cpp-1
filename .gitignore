@@ -42,3 +42,6 @@ gmon.out
 
 # CCCCC
 .cccc/
+
+# Doxygen
+doxygen/
