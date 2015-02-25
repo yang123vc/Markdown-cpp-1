@@ -1,17 +1,44 @@
-*.exe
-markdown
+# Compiled Object files
+obj/
+*.slo
+*.lo
 *.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
 *.a
 *.def
+*.lib
+
+# Executables
+bin/
+*.exe
+*.out
+*.app
+
+# Codeblocks
 *.layout
 *.depend
-*.save
-*.dll
-*.so
+
+# CppCheck
 CppCheckResults.xml
-doxygen/
-bin/
-obj/
-lib2/
-.cccc/
+
+# Profile
 gmon.out
+
+# CCCCC
+.cccc/
