@@ -1,7 +1,7 @@
 # Markdown-cpp
 a parser mainly markdown written in cpp
 
-# Differences to the [Markdown] [1]
+# Differences to Markdown v 1.0.1
 * supports of the github styled <code>```</code> code blocks
 * allows \_ in words without being translated to italic
 

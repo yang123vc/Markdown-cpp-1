@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdlib.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -8,28 +9,65 @@ using namespace std;
 #include "lib/libmarkdown.h"
 #include "lib/htmlParser.h"
 
-const char* files[50] = {TEST_AMPS,TEST_AUTO_LINKS,TEST_BACKSLASH,TEST_BLOCKQUOTES,TEST_HARD_WRAPP,
-                      TEST_HORIZONTAL_RULES,TEST_INLINE_HTML_ADV,TEST_INLINE_HTML_SIMPLE,TEST_INLINE_HTML_COM,
-                      TEST_LINKS_INLINE,TEST_LINKS_REF,TEST_LITERAL,TEST_DOC_BASIC,TEST_DOC_SYNTAX,TEST_NESTED,
-                      TEST_ORDERED,TEST_STRONG,TEST_TABS,TEST_TIDY,TEST_CUSTOM};
-
+void show_help(char* s)
+{
+    cout << "Usage:    " << s << " -h -o file file" << endl;
+    cout << "option:   " << "-h      show help information" << endl;
+    cout << "          " << "-o file specify an output file" << endl;
+    cout << "          " << "file the file to parse" << endl;
+}
 
 int main(int argc, char** argv)
 {
 
+    if( argc == 1)
+    {
+        show_help(argv[0]);
+        exit(1);
+    }
+
+    char tmp;
+    string out_file;
+    string in_file;
+    while( (tmp=getopt(argc,argv,"ho:?"))!= -1)
+    {
+        switch(tmp)
+        {
+            case 'h':
+                show_help(argv[0]);
+            break;
+
+            case 'o':
+                out_file = optarg;
+            break;
+
+
+            default:
+                show_help(argv[0]);
+            break;
+        }
+    }
 
     string content;
-    if( argc == 1)
-        content = get_file_contents(files[13]);
-    else
-        content = get_file_contents(files[atoi(argv[1])]);
+
+    if( argv[optind] == NULL)
+    {
+        show_help(argv[0]);
+        exit(1);
+    }
+
+    in_file = argv[optind];
+
+    content = get_file_contents(in_file.c_str());
+
     HTMLParser* parser = new HTMLParser();
     parser->print_headers(false);
     string parsed = parse( content, parser);
 
-    cout << parsed << endl;
-
-    set_file_contents("output/out.html",parsed);
+    if( out_file.empty())
+        cout << parsed << endl;
+    else
+        set_file_contents(out_file.c_str(),parsed);
 
     return 0;
 }

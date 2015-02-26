@@ -3,6 +3,7 @@
 
 #include <string>
 #include "parser.h"
+#include "../version.h"
 
 using namespace std;
 
