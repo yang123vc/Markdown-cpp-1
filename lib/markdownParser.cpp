@@ -39,7 +39,7 @@ MarkdownParser::MarkdownParser()
 
 MarkdownParser::~MarkdownParser()
 {
-
+    m_headers = true;
 }
 
 void MarkdownParser::add_footer()
@@ -87,42 +87,34 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
         {
             if( ishrule(*line))
             {
-                cout << "hrule" << endl;
                 hrule_block(line, level, lines.end());
             }
             else if( isheadline(*line)) // header block
             {
-                cout << "headline" << endl;
                 headline_block(line, level, lines.end());
             }
             else if( ishtmlblock(*line))
             {
-                cout << "html" << endl;
                 html_block(line, level, lines.end());
             }
             else if( ishtmlcomment(*line))
             {
-                cout << "comment" << endl;
                 comment_block(line, level, lines.end());
             }
             else if( isblockquote(*line)) // blockquote
             {
-                cout << "blockquote" << endl;
                 blockquote_block(line, level, lines.end());
             }
             else if( isunorderedlist(*line) || isorderedlist(*line)) // list block
             {
-                cout << "list" << endl;
                 list_block(line, level, lines.end());
             }
             else if( iscodeblock(*line)) // code block
             {
-                cout << "code" << endl;
                 code_block(line, level, lines.end());
             }
             else if( ispreformated(*line)) // code block
             {
-                cout << "pre" << endl;
                 preformated_block(line, level, lines.end());
             }
             else
@@ -131,7 +123,6 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
 
         if( !found) // Normal paragraph
         {
-            cout << "paragraph" << endl;
             found = true;
             paragraph_block(line, level, lines.end());
         }
@@ -177,7 +168,6 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
 
         if( !found) // Normal paragraph
         {
-            cout << "paragraph" << endl;
             found = true;
             normal_block(line, level, multiline, lines.end());
         }

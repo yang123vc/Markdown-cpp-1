@@ -29,7 +29,6 @@ list<string> Parser::extract_parameter(string& line)
             string temp = "";
             while( i < line.length() && (line[i] != c))
                 temp += line[i++];
-            cout << temp << endl;
             params.push_back(temp);
         }
         else
@@ -37,7 +36,6 @@ list<string> Parser::extract_parameter(string& line)
             string temp = "";
             while( i < line.length() && !isspace(line[i]))
                 temp += line[i++];
-            cout << temp << endl;
             params.push_back(temp);
         }
     }
