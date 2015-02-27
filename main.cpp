@@ -20,11 +20,11 @@ void show_help(char* s)
 int main(int argc, char** argv)
 {
 
-    if( argc == 1)
+    /*if( argc == 1)
     {
         show_help(argv[0]);
         exit(1);
-    }
+    }*/
 
     char tmp;
     string out_file;
