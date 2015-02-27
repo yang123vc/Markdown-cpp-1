@@ -13,6 +13,4 @@ a parser mainly markdown written in cpp
 require a cpp compiler to support std::regex (gcc 4.9 for example).
 No further dependencies.
 
-# Hallo Sabine
-
 [1]: http://daringfireball.net/projects/markdown/

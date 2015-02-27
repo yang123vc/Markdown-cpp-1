@@ -11,7 +11,7 @@ using namespace std;
 
 void show_help(char* s)
 {
-    cout << "Usage:    " << s << " -h -o file file" << endl;
+    cout << "Usage:    " << s << " -h -l level -o file file" << endl;
     cout << "option:   " << "-h      show help information" << endl;
     cout << "          " << "-o file specify an output file" << endl;
     cout << "          " << "file the file to parse" << endl;
@@ -22,7 +22,8 @@ int main(int argc, char** argv)
     char tmp;
     string out_file;
     string in_file;
-    while( (tmp=getopt(argc,argv,"ho:?"))!= -1)
+    int level = 0;
+    while( (tmp=getopt(argc,argv,"ho:l:?"))!= -1)
     {
         switch(tmp)
         {
@@ -34,6 +35,9 @@ int main(int argc, char** argv)
                 out_file = optarg;
             break;
 
+            case 'l':
+                level = atoi(optarg);
+            break;
 
             default:
                 show_help(argv[0]);
@@ -58,6 +62,7 @@ int main(int argc, char** argv)
 
     HTMLParser* parser = new HTMLParser();
     parser->print_headers(false);
+    parser->set_ground_level(level);
     string parsed = parse( content, parser);
 
     if( out_file.empty())

@@ -6,6 +6,7 @@ MarkdownParser::MarkdownParser()
 {
     m_ordered = false;
     print_headers(true);
+    m_level = 0;
     m_bold = regex("^((?:\\*|_){2})((?!\\s|\\1).*?[^\\s\\\\](?:\\*|_)?)\\1");
     m_italic = regex("^(\\*|_)((?!\\s|\\1).*?[^\\s\\\\])\\1");
     m_unicodeChar = regex("^&([a-zA-Z]+|#[0-9]+);");
@@ -39,7 +40,12 @@ MarkdownParser::MarkdownParser()
 
 MarkdownParser::~MarkdownParser()
 {
-    m_headers = true;
+
+}
+
+void MarkdownParser::set_ground_level( int level)
+{
+    m_level = level;
 }
 
 void MarkdownParser::add_footer()
@@ -65,7 +71,7 @@ void MarkdownParser::parse()
     if( m_lines.empty())
         return;
     initial_manipulation();
-    define_blocks(m_lines);
+    define_blocks(m_lines, m_level);
 
 }
 

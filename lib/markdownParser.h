@@ -35,6 +35,12 @@ class MarkdownParser : public Parser
         MarkdownParser();
         ~MarkdownParser();
 
+        /** \brief set the default level of the ground blocks
+         *
+         * \param the level to be the default level
+         */
+        void set_ground_level( int level);
+
         /** @brief implementation of the abstract function to add an header
           *
           * invokes the abstract \c header_event function
@@ -638,6 +644,8 @@ class MarkdownParser : public Parser
 
         bool m_headers; //< flag for calling \c header_event or \c footer_event
         bool m_ordered; //< if a list is an ordered list
+
+        int m_level; // ground level
 };
 
 #endif // MARKDOWN_PARSER_H_
