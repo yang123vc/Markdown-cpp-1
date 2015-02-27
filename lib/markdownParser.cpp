@@ -1033,63 +1033,71 @@ int MarkdownParser::find_htmlTags(string& s)
         string paras = m_match[2];
         string text = m_match[3];
         html_begin_event(tag, paras);
-        for( size_t j = 0; j < text.length(); ++j)
+        if( tag.compare("code"))
         {
-            size_t pos;
-            string temp = text.substr(j);
-            if( isspace(temp[0]))
+
+            for( size_t j = 0; j < text.length(); ++j)
             {
-                replace_char(temp[0]);
-            }
-            else if( (pos = find_word(temp)))
-            {
-                j += pos-1;
-            }
-            else if( (pos = find_htmlTags(temp)))
-            {
-                j+=pos;
-            }
-            else if( (pos = find_inline_code(temp)))
-            {
-                j+=pos;
-            }
-            else if( (pos = find_bold(temp)))
-            {
-                j+=pos;
-            }
-            else if( (pos = find_italic(temp)))
-            {
-                j+=pos;
-            }
-            else if( (pos = find_unicode(temp)))
-            {
-                j+=pos;
-            }
-            else if( (pos = find_comment(temp)))
-            {
-                j+=pos;
-            }
-            else if( (pos = find_references(temp)))
-            {
-                j+=pos;
-            }
-            else if( (pos = find_links(temp)))
-            {
-                j+=pos;
-            }
-            else if( temp[0] == '\\')
-            {
-                if( temp.length() > 1)
+                size_t pos;
+                string temp = text.substr(j);
+                if( isspace(temp[0]))
                 {
-                    j += check_escaped_char(temp[1]);
+                    replace_char(temp[0]);
+                }
+                else if( (pos = find_word(temp)))
+                {
+                    j += pos-1;
+                }
+                else if( (pos = find_htmlTags(temp)))
+                {
+                    j+=pos;
+                }
+                else if( (pos = find_inline_code(temp)))
+                {
+                    j+=pos;
+                }
+                else if( (pos = find_bold(temp)))
+                {
+                    j+=pos;
+                }
+                else if( (pos = find_italic(temp)))
+                {
+                    j+=pos;
+                }
+                else if( (pos = find_unicode(temp)))
+                {
+                    j+=pos;
+                }
+                else if( (pos = find_comment(temp)))
+                {
+                    j+=pos;
+                }
+                else if( (pos = find_references(temp)))
+                {
+                    j+=pos;
+                }
+                else if( (pos = find_links(temp)))
+                {
+                    j+=pos;
+                }
+                else if( temp[0] == '\\')
+                {
+                    if( temp.length() > 1)
+                    {
+                        j += check_escaped_char(temp[1]);
+                    }
+                    else
+                        replace_char(temp[0]);
                 }
                 else
+                {
                     replace_char(temp[0]);
+                }
             }
-            else
-            {
-                replace_char(temp[0]);
-            }
+        }
+        else
+        {
+            replace_code_char(text);
         }
         html_end_event(tag);
     }
