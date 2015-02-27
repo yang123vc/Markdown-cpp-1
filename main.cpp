@@ -52,13 +52,16 @@ int main(int argc, char** argv)
 
     if( argv[optind] == NULL)
     {
-        show_help(argv[0]);
-        exit(1);
+        string temp;
+        while (getline(cin,temp)) {
+          content += temp;
+        }
     }
-
-    in_file = argv[optind];
-
-    content = get_file_contents(in_file.c_str());
+    else
+    {
+        in_file = argv[optind];
+        content = get_file_contents(in_file.c_str());
+    }
 
     HTMLParser* parser = new HTMLParser();
     parser->print_headers(false);
