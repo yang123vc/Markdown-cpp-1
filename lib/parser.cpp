@@ -12,6 +12,10 @@ void Parser::set_lines(list<string>& lines)
 
 string Parser::get_content()
 {
+
+    while(!m_content.empty() && m_content.back().empty())
+        m_content.pop_back();
+
     return m_content;
 }
 
