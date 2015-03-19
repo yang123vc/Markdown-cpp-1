@@ -29,6 +29,7 @@ bin/
 *.exe
 *.out
 *.app
+markdown
 
 # Codeblocks
 *.layout
