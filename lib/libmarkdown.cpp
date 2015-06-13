@@ -12,37 +12,38 @@
  * \return a list containing each line as an entry
  *
  */
-list<string> split_lines(string& content){
+list<string> split_lines(string& content)
+{
 
-    list<string> lines;
+  list<string> lines;
 
-    istringstream split(content);
-    for (string each; getline(split, each); )
+  istringstream split(content);
+  for (string each; getline(split, each); )
+  {
+    // remove line endings if there are some
+    size_t line_break = each.rfind('\r');
+    if( line_break != string::npos)
     {
-        // remove line endings if there are some
-        size_t line_break = each.rfind('\r');
-        if( line_break != string::npos)
-        {
-            each = each.substr(0,each.length()-1);
-        }
-        line_break = each.rfind('\n');
-        if( line_break != string::npos)
-        {
-            each = each.substr(0,each.length()-1);
-        }
-        lines.push_back(each);
+      each = each.substr(0,each.length()-1);
     }
+    line_break = each.rfind('\n');
+    if( line_break != string::npos)
+    {
+      each = each.substr(0,each.length()-1);
+    }
+    lines.push_back(each);
+  }
 
-    return lines;
+  return lines;
 }
 
 string parse(string& content, Parser* parser)
 {
-    list<string> lines = split_lines(content);
-    parser->add_header();
-    parser->set_lines(lines);
-    parser->parse();
-    parser->add_footer();
+  list<string> lines = split_lines(content);
+  parser->add_header();
+  parser->set_lines(lines);
+  parser->parse();
+  parser->add_footer();
 
-    return parser->get_content();
+  return parser->get_content();
 }

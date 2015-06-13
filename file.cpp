@@ -18,11 +18,12 @@ string get_file_contents(const char *filename)
 
 void set_file_contents(const char* filename, const string& content)
 {
-    fstream out(filename, ios::out | ios::binary);
-    if( out){
-        out.write(content.c_str(), content.length());
-        out.close();
-    }
-    else
-        throw(errno);
+  fstream out(filename, ios::out | ios::binary);
+  if( out)
+  {
+    out.write(content.c_str(), content.length());
+    out.close();
+  }
+  else
+    throw(errno);
 }

@@ -12,7 +12,7 @@
 				<Option object_output="obj/lib/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
-				<Option parameters="-o README.html README.md" />
+				<Option parameters="-o output/test.html Tests/Tabels.text" />
 				<Option host_application="./markdown" />
 				<Option run_host_application_in_terminal="1" />
 				<Option createDefFile="1" />
@@ -27,8 +27,8 @@
 				<Option object_output="obj/lib/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
-				<Option parameters="13" />
-				<Option host_application="./markdown" />
+				<Option parameters="-o output/test.html Tests/Codeblocks.text" />
+				<Option host_application="bin/Debug/markdown.exe" />
 				<Option run_host_application_in_terminal="1" />
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
@@ -77,13 +77,13 @@
 		<Unit filename="version.h" />
 		<Extensions>
 			<DoxyBlocks>
-				<comment_style block="0" line="0" />
-				<doxyfile_project />
+				<comment_style block="0" line="2" />
+				<doxyfile_project use_auto_version="1" />
 				<doxyfile_build />
 				<doxyfile_warnings />
 				<doxyfile_output />
 				<doxyfile_dot />
-				<general />
+				<general use_at_in_tags="1" />
 			</DoxyBlocks>
 			<code_completion />
 			<envvars />

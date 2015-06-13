@@ -13,6 +13,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option parameters="-o output/test.html Tests\Codeblocks.text" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -26,7 +27,7 @@
 				<Option external_deps="libmarkdown.a;" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="-o README.html README.md" />
+				<Option parameters="-o output/test.html Tests\Codeblocks.text" />
 				<Compiler>
 					<Add option="-O3" />
 				</Compiler>
@@ -35,6 +36,9 @@
 				</Linker>
 			</Target>
 		</Build>
+		<VirtualTargets>
+			<Add alias="All" targets="Debug;" />
+		</VirtualTargets>
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
@@ -47,6 +51,7 @@
 		<Unit filename="Tests/Auto links.text" />
 		<Unit filename="Tests/Backslash escapes.text" />
 		<Unit filename="Tests/Blockquotes with code blocks.text" />
+		<Unit filename="Tests/Codeblocks.text" />
 		<Unit filename="Tests/Custom.text" />
 		<Unit filename="Tests/Hard-wrapped paragraphs with list-like lines.text" />
 		<Unit filename="Tests/Horizontal rules.text" />
@@ -61,6 +66,7 @@
 		<Unit filename="Tests/Nested blockquotes.text" />
 		<Unit filename="Tests/Ordered and unordered lists.text" />
 		<Unit filename="Tests/Strong and em together.text" />
+		<Unit filename="Tests/Tabels.text" />
 		<Unit filename="Tests/Tabs.text" />
 		<Unit filename="Tests/Tidyness.text" />
 		<Unit filename="file.cpp" />
