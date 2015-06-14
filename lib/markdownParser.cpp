@@ -32,15 +32,17 @@ MarkdownParser::MarkdownParser()
   m_code = regex("^```([^\\s]*)");
   m_code_end = regex("(.*)```");
   m_reference_db = regex("^(!?)\\[([^\\]\\[]+?(?:\\[[^\\]]*\\])*)\\](?: |\n)?(\\[([^\\]\\[]*?(?:\\[[^\\]]*\\])*)\\])?");
-  m_reference_inline = regex("^(!?)\\[([^\\]]+)\\] ?\\(<?((?:#|http://|/|ftp://|file://)?[^\\)]*?)>?\\)");
-  m_links = regex("^<((?:(?:http|ftp|file)://)[^\\s]+)>");
+  m_reference_inline = regex("^(!?)\\[(([^\\[]*\\[\\])?[^\\]]*)\\] ?\\(<?((?:#|https?://|/|ftp://|file://)?[^\\)]*?)>?\\)");
+  m_links = regex("^<((?:(?:https?|ftp|file)://)[^\\s]+)>");
   m_email = regex("^<([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6})>");
   m_force_line = regex("^[ ]{2,}($|\n)");
-  m_ref = regex("^\\s{0,3}\\[([^\\]]+)\\]:\\s*(#|http://|ftp://|/|file://)");// finding references in source
+  m_ref = regex("^\\s{0,3}\\[([^\\]]+)\\]:\\s*(#|https?://|ftp://|/|file://)");// finding references in source
   m_word = regex("^((?:[a-zA-Z]+[a-zA-Z0-9]*|[0-9]+) ?)");
   m_table = regex("^[ \t]*\\|?[ \t]*.*[ \t]*(\\|[ \t]*.*[ \t]*\\|?)+$");
-  m_table_align = regex("^[ \t]*\\|?[ \t]*:?---+:?[ \t]*(\\|[ \t]*:?---+:?[ \t]*)+\\|?[ \t]**$");
+  m_table_align = regex("^[ \t]*\\|?[ \t]*:?---+:?[ \t]*(\\|[ \t]*:?---+:?[ \t]*)*\\|?[ \t]*$");
   m_table_empty = regex("^[ \t]*\\|?[ \t]*---+[ \t]*(\\|[ \t]*---+[ \t]*)+\\|?[ \t]*$");
+  m_footnote_db = regex("^[ \t]*\\[\\^([^\\]]*)\\]: ?(.*)$");
+  m_footnote = regex("^\\[\\^([^\\]]*)\\]");
 }
 
 MarkdownParser::~MarkdownParser()
@@ -77,7 +79,7 @@ void MarkdownParser::parse()
     return;
   initial_manipulation();
   define_blocks(m_lines, m_level);
-
+  footnote_end_event();
 }
 
 void MarkdownParser::define_blocks(list<string>& lines, int level)
@@ -100,48 +102,40 @@ void MarkdownParser::define_blocks(list<string>& lines, int level)
       {
         hrule_block(line, level, lines.end());
       }
+      else if( isheadline(*line)) // header block
+      {
+        headline_block(line, level, lines.end());
+      }
+      else if( ishtmlblock(*line))
+      {
+        html_block(line, level, lines.end());
+      }
+      else if( ishtmlcomment(*line))
+      {
+        comment_block(line, level, lines.end());
+      }
+      else if( isblockquote(*line)) // blockquote
+      {
+        blockquote_block(line, level, lines.end());
+      }
+      else if( isunorderedlist(*line) || isorderedlist(*line)) // list block
+      {
+        list_block(line, level, lines.end());
+      }
+      else if( iscodeblock(*line)) // code block
+      {
+        code_block(line, level, lines.end());
+      }
+      else if( ispreformated(*line)) // code block
+      {
+        preformated_block(line, level, lines.end());
+      }
+      else if( istable(*line)) // table block
+      {
+        table_block(line, level, lines.end());
+      }
       else
-        if( isheadline(*line)) // header block
-        {
-          headline_block(line, level, lines.end());
-        }
-        else
-          if( ishtmlblock(*line))
-          {
-            html_block(line, level, lines.end());
-          }
-          else
-            if( ishtmlcomment(*line))
-            {
-              comment_block(line, level, lines.end());
-            }
-            else
-              if( isblockquote(*line)) // blockquote
-              {
-                blockquote_block(line, level, lines.end());
-              }
-              else
-                if( isunorderedlist(*line) || isorderedlist(*line)) // list block
-                {
-                  list_block(line, level, lines.end());
-                }
-                else
-                  if( iscodeblock(*line)) // code block
-                  {
-                    code_block(line, level, lines.end());
-                  }
-                  else
-                    if( ispreformated(*line)) // code block
-                    {
-                      preformated_block(line, level, lines.end());
-                    }
-                    else
-                      if( istable(*line)) // table block
-                      {
-                        table_block(line, level, lines.end());
-                      }
-                      else
-                        found = false;
+        found = false;
     }
 
     if( !found) // Normal paragraph
@@ -178,16 +172,15 @@ void MarkdownParser::list_blocks(list<string>& lines, int level)
         multiline = false;
         hrule_block(line, level, lines.end());
       }
+      else if( isunorderedlist(*line) || isorderedlist(*line)) // list block
+      {
+        multiline = false;
+        list_block(line, level, lines.end());
+      }
       else
-        if( isunorderedlist(*line) || isorderedlist(*line)) // list block
-        {
-          multiline = false;
-          list_block(line, level, lines.end());
-        }
-        else
-        {
-          found = false;
-        }
+      {
+        found = false;
+      }
     }
 
     if( !found) // Normal paragraph
@@ -238,7 +231,8 @@ void MarkdownParser::code_block(list<string>::iterator& line, int level, list<st
     else if( line == ende || (*line).empty())
       break;
     tempStrings.push_back(*line);
-  }while(true);
+  }
+  while(true);
 
   if(is_codeblock)
   {
@@ -296,12 +290,11 @@ void MarkdownParser::preformated_block(list<string>::iterator& line, int level, 
     ++line;
     if( line == ende)
       break;
-    else
-      if( (*line).empty())
-      {
-        empty_line = true;
-        ++line;
-      }
+    else if( (*line).empty())
+    {
+      empty_line = true;
+      ++line;
+    }
 
     if( isblockquote(*line) || !ispreformated(*line))
     {
@@ -338,35 +331,32 @@ void MarkdownParser::blockquote_block(list<string>::iterator& line, int level, l
       else
         content.push_back(temp.substr(pos>0));
     }
+    else if( ispreformated(*line))
+    {
+      content.push_back((*line).substr(m_match.length(0)));
+    }
     else
-      if( ispreformated(*line))
-      {
-        content.push_back((*line).substr(m_match.length(0)));
-      }
-      else
-        content.push_back(*line);
+      content.push_back(*line);
     ++line;
     if( line == ende)
       break;
-    else
-      if((*line).empty())
+    else if((*line).empty())
+    {
+      ++line;
+      if( line == ende || !(isblockquote(*line) || ispreformated(*line)))
       {
-        ++line;
-        if( line == ende || !(isblockquote(*line) || ispreformated(*line)))
-        {
-          --line;
-          --line;
-          break;
-        }
-        else
-          content.push_back("");
+        --line;
+        --line;
+        break;
       }
       else
-        if( isheadline(*line))
-        {
-          --line;
-          break;
-        }
+        content.push_back("");
+    }
+    else if( isheadline(*line))
+    {
+      --line;
+      break;
+    }
   }
   while(true);
   blockquote_manipulation(content);
@@ -408,29 +398,27 @@ void MarkdownParser::list_block(list<string>::iterator& line, int level, list<st
         }
         if( line == ende || isheadline(*line) || isblockquote(*line))
           break;
+        else if(islist(*line))
+        {
+          if( empty_line)
+            content.push_back("");
+          break;
+        }
+        else if( ispreformated(*line))
+        {
+          if( empty_line)
+            content.push_back("");
+          content.push_back((*line).substr(m_match.length(0)));
+        }
         else
-          if(islist(*line))
+        {
+          if( empty_line)
           {
-            if( empty_line)
-              content.push_back("");
+            --line;
             break;
           }
-          else
-            if( ispreformated(*line))
-            {
-              if( empty_line)
-                content.push_back("");
-              content.push_back((*line).substr(m_match.length(0)));
-            }
-            else
-            {
-              if( empty_line)
-              {
-                --line;
-                break;
-              }
-              content.push_back(*line);
-            }
+          content.push_back(*line);
+        }
       }
       while(true);
 
@@ -443,23 +431,21 @@ void MarkdownParser::list_block(list<string>::iterator& line, int level, list<st
 
     if( line == ende)
       break;
-    else
-      if((*line).empty())
+    else if((*line).empty())
+    {
+      ++line;
+      if( line == ende || isblockquote(*line) || iscodeblock(*line))
       {
-        ++line;
-        if( line == ende || isblockquote(*line) || iscodeblock(*line))
-        {
-          --line;
-          --line;
-          break;
-        }
+        --line;
+        --line;
+        break;
       }
-      else
-        if( !islist(*line) && !ispreformated(*line))
-        {
-          --line;
-          break;
-        }
+    }
+    else if( !islist(*line) && !ispreformated(*line))
+    {
+      --line;
+      break;
+    }
   }
   while(true);
 
@@ -527,19 +513,18 @@ void MarkdownParser::html_block(list<string>::iterator& line, int level, list<st
     {
       html_block(it, level+1, content.end());
     }
+    else if( (*it).empty())
+    {
+      insert_line();
+    }
     else
-      if( (*it).empty())
-      {
+    {
+      if( content.size() > 1)
+        insert_level(level+1);
+      parse_line(*it);
+      if( content.size() > 1)
         insert_line();
-      }
-      else
-      {
-        if( content.size() > 1)
-          insert_level(level+1);
-        parse_line(*it);
-        if( content.size() > 1)
-          insert_line();
-      }
+    }
   }
 
   if( content.size() > 1)
@@ -640,7 +625,6 @@ void MarkdownParser::table_block(list<string>::iterator& line, int level, list<s
   {
     string config = (*line);
 
-    cout << config << endl;
     bool first = true;
     bool block =false;
     list<Align> table_header;
@@ -744,7 +728,8 @@ void MarkdownParser::table_block(list<string>::iterator& line, int level, list<s
       if( !istable(*line) || line == ende)
         break;
       tableContent.push_back(*line);
-    }while(true);
+    }
+    while(true);
 
     for( string content_line : tableContent)
     {
@@ -753,7 +738,6 @@ void MarkdownParser::table_block(list<string>::iterator& line, int level, list<s
       level++;
       first = true;
       string temp_name = "";
-      cout << content_line << endl;
 
       regex exp("\\|\\|+");
       smatch e_match;
@@ -767,7 +751,6 @@ void MarkdownParser::table_block(list<string>::iterator& line, int level, list<s
 
       for( char c : content_line)
       {
-        cout << c << endl;
         if( first)
         {
           if( c == ' ' || c =='\t')
@@ -815,7 +798,6 @@ void MarkdownParser::table_block(list<string>::iterator& line, int level, list<s
         table_end_col();
         temp_name = "";
       }
-      cout << endl;
       level--;
       insert_level(level);
       table_end_row();
@@ -849,31 +831,30 @@ void MarkdownParser::normal_block(list<string>::iterator& line, int level, bool&
       --line;
       break;
     }
-    else
-      if( (*line).empty())
+    else if( (*line).empty())
+    {
+      if( !multiline)
       {
-        if( !multiline)
+        multiline = true;
+        if( content.empty())
         {
-          multiline = true;
-          if( content.empty())
-          {
-            paragraph_begin_event();
-            content += cont;
-            cont = "\n";
-          }
-          else
-          {
-            paragraph_begin_event();
-          }
-          --line;
+          paragraph_begin_event();
+          content += cont;
+          cont = "\n";
         }
-        break;
+        else
+        {
+          paragraph_begin_event();
+        }
+        --line;
       }
-      else
-      {
-        content += cont;
-        cont = "\n";
-      }
+      break;
+    }
+    else
+    {
+      content += cont;
+      cont = "\n";
+    }
   }
   while(true);
 
@@ -980,21 +961,20 @@ void MarkdownParser::initial_manipulation()
           temp_lines.push_back(line);
           continue;
         }
-        else
-          if( mode > 0)
+        else if( mode > 0)
+        {
+          string last_line = temp_lines.back();
+          trim(last_line);
+          if( !temp_lines.empty() && !last_line.empty())
           {
-            string last_line = temp_lines.back();
-            trim(last_line);
-            if( !temp_lines.empty() && !last_line.empty())
-            {
-              string last = temp_lines.back();
-              temp_lines.pop_back();
-              if( !temp_lines.empty() && !temp_lines.back().empty())
-                temp_lines.push_back("");
-              temp_lines.push_back(header_event(last,mode));
-              continue;
-            }
+            string last = temp_lines.back();
+            temp_lines.pop_back();
+            if( !temp_lines.empty() && !temp_lines.back().empty())
+              temp_lines.push_back("");
+            temp_lines.push_back(header_event(last,mode));
+            continue;
           }
+        }
       }
       if( horizontal_rule_line(line))
       {
@@ -1030,19 +1010,18 @@ void MarkdownParser::blockquote_manipulation(list<string>& lines)
         temp_lines.push_back(line);
         continue;
       }
-      else
-        if( mode > 0)
+      else if( mode > 0)
+      {
+        if( !temp_lines.empty() && !temp_lines.back().empty())
         {
+          string last = temp_lines.back();
+          temp_lines.pop_back();
           if( !temp_lines.empty() && !temp_lines.back().empty())
-          {
-            string last = temp_lines.back();
-            temp_lines.pop_back();
-            if( !temp_lines.empty() && !temp_lines.back().empty())
-              temp_lines.push_back("");
-            temp_lines.push_back(header_event(last,mode));
-            continue;
-          }
+            temp_lines.push_back("");
+          temp_lines.push_back(header_event(last,mode));
+          continue;
         }
+      }
     }
     if( horizontal_rule_line(line))
     {
@@ -1070,75 +1049,67 @@ void MarkdownParser::parse_line(string& s)
     {
       replace_char(temp[0]);
     }
-    else
-      if( (pos = find_word(temp)))
+    else if( (pos = find_word(temp)))
+    {
+      i+= pos-1;
+    }
+    else if( (pos = find_bold(temp)))
+    {
+      i+= pos;
+    }
+    else if( (pos = find_italic(temp)))
+    {
+      i += pos;
+    }
+    else if( (pos = find_comment(temp)))
+    {
+      i += pos;
+    }
+    else if( (pos = find_links(temp)))
+    {
+      i += pos;
+    }
+    else if( (pos = find_footnote(temp)))
+    {
+      i += pos;
+    }
+    else if( (pos = find_references(temp)))
+    {
+      i += pos;
+    }
+    else if( (pos = find_htmlTags(temp)))
+    {
+      i += pos;
+    }
+    else if( (pos = find_inline_code_block(temp)))
+    {
+      i += pos;
+    }
+    else if( (pos = find_inline_code(temp)))
+    {
+      i += pos;
+    }
+    else if( (pos = find_new_line(temp)))
+    {
+      i += pos;
+    }
+    else if( (pos = find_unicode(temp)))
+    {
+      i += pos;
+    }
+    else if( temp[0] == '\\')
+    {
+      if( temp.length() > 1)
       {
-        i+= pos-1;
+        i += check_escaped_char(temp[1]);
       }
       else
-        if( (pos = find_bold(temp)))
-        {
-          i+= pos;
-        }
-        else
-          if( (pos = find_italic(temp)))
-          {
-            i += pos;
-          }
-          else
-            if( (pos = find_comment(temp)))
-            {
-              i += pos;
-            }
-            else
-              if( (pos = find_links(temp)))
-              {
-                i += pos;
-              }
-              else
-                if( (pos = find_references(temp)))
-                {
-                  i += pos;
-                }
-                else
-                  if( (pos = find_htmlTags(temp)))
-                  {
-                    i += pos;
-                  }
-                  else
-                    if( (pos = find_inline_code_block(temp)))
-                    {
-                      i += pos;
-                    }
-                    else
-                      if( (pos = find_inline_code(temp)))
-                      {
-                        i += pos;
-                      }
-                      else
-                        if( (pos = find_new_line(temp)))
-                        {
-                          i += pos;
-                        }
-                        else
-                          if( (pos = find_unicode(temp)))
-                          {
-                            i += pos;
-                          }
-                          else
-                            if( temp[0] == '\\')
-                            {
-                              if( temp.length() > 1)
-                              {
-                                i += check_escaped_char(temp[1]);
-                              }
-                              else
-                                replace_char(temp[0]);
-                            }
-                            else
-                            {
-                              replace_char(temp[0]);
-                            }
+        replace_char(temp[0]);
+    }
+    else
+    {
+      replace_char(temp[0]);
+    }
   }
 }
 
@@ -1182,60 +1153,55 @@ int MarkdownParser::find_bold(string& s)
       {
         replace_char(temp[0]);
       }
-      else
-        if( (pos = find_word(temp)))
+      else if( (pos = find_word(temp)))
+      {
+        j += pos-1;
+      }
+      else if( (pos = find_italic(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_unicode(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_htmlTags(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_footnote(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_references(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_links(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_comment(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_inline_code(temp)))
+      {
+        j+=pos;
+      }
+      else if( temp[0] == '\\')
+      {
+        if( temp.length() > 1)
         {
-          j += pos-1;
+          j += check_escaped_char(temp[1]);
         }
         else
-          if( (pos = find_italic(temp)))
-          {
-            j+=pos;
-          }
-          else
-            if( (pos = find_unicode(temp)))
-            {
-              j+=pos;
-            }
-            else
-              if( (pos = find_htmlTags(temp)))
-              {
-                j+=pos;
-              }
-              else
-                if( (pos = find_references(temp)))
-                {
-                  j+=pos;
-                }
-                else
-                  if( (pos = find_links(temp)))
-                  {
-                    j+=pos;
-                  }
-                  else
-                    if( (pos = find_comment(temp)))
-                    {
-                      j+=pos;
-                    }
-                    else
-                      if( (pos = find_inline_code(temp)))
-                      {
-                        j+=pos;
-                      }
-                      else
-                        if( temp[0] == '\\')
-                        {
-                          if( temp.length() > 1)
-                          {
-                            j += check_escaped_char(temp[1]);
-                          }
-                          else
-                            replace_char(temp[0]);
-                        }
-                        else
-                        {
-                          replace_char(temp[0]);
-                        }
+          replace_char(temp[0]);
+      }
+      else
+      {
+        replace_char(temp[0]);
+      }
     }
     text_bold_end_event();
   }
@@ -1260,55 +1226,51 @@ int MarkdownParser::find_italic(string& s)
       {
         replace_char(temp[0]);
       }
-      else
-        if( (pos = find_word(temp)))
+      else if( (pos = find_word(temp)))
+      {
+        j += pos-1;
+      }
+      else if( (pos = find_unicode(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_htmlTags(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_footnote(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_references(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_links(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_comment(temp)))
+      {
+        j+=pos;
+      }
+      else if( (pos = find_inline_code(temp)))
+      {
+        j+=pos;
+      }
+      else if( temp[0] == '\\')
+      {
+        if( temp.length() > 1)
         {
-          j += pos-1;
+          j += check_escaped_char(temp[1]);
         }
         else
-          if( (pos = find_unicode(temp)))
-          {
-            j+=pos;
-          }
-          else
-            if( (pos = find_htmlTags(temp)))
-            {
-              j+=pos;
-            }
-            else
-              if( (pos = find_references(temp)))
-              {
-                j+=pos;
-              }
-              else
-                if( (pos = find_links(temp)))
-                {
-                  j+=pos;
-                }
-                else
-                  if( (pos = find_comment(temp)))
-                  {
-                    j+=pos;
-                  }
-                  else
-                    if( (pos = find_inline_code(temp)))
-                    {
-                      j+=pos;
-                    }
-                    else
-                      if( temp[0] == '\\')
-                      {
-                        if( temp.length() > 1)
-                        {
-                          j += check_escaped_char(temp[1]);
-                        }
-                        else
-                          replace_char(temp[0]);
-                      }
-                      else
-                      {
-                        replace_char(temp[0]);
-                      }
+          replace_char(temp[0]);
+      }
+      else
+      {
+        replace_char(temp[0]);
+      }
     }
     text_italic_end_event();
   }
@@ -1367,65 +1329,59 @@ int MarkdownParser::find_htmlTags(string& s)
         {
           replace_char(temp[0]);
         }
-        else
-          if( (pos = find_word(temp)))
+        else if( (pos = find_word(temp)))
+        {
+          j += pos-1;
+        }
+        else if( (pos = find_htmlTags(temp)))
+        {
+          j+=pos;
+        }
+        else if( (pos = find_inline_code(temp)))
+        {
+          j+=pos;
+        }
+        else if( (pos = find_bold(temp)))
+        {
+          j+=pos;
+        }
+        else if( (pos = find_italic(temp)))
+        {
+          j+=pos;
+        }
+        else if( (pos = find_unicode(temp)))
+        {
+          j+=pos;
+        }
+        else if( (pos = find_comment(temp)))
+        {
+          j+=pos;
+        }
+        else if( (pos = find_footnote(temp)))
+        {
+          j+=pos;
+        }
+        else if( (pos = find_references(temp)))
+        {
+          j+=pos;
+        }
+        else if( (pos = find_links(temp)))
+        {
+          j+=pos;
+        }
+        else if( temp[0] == '\\')
+        {
+          if( temp.length() > 1)
           {
-            j += pos-1;
+            j += check_escaped_char(temp[1]);
           }
           else
-            if( (pos = find_htmlTags(temp)))
-            {
-              j+=pos;
-            }
-            else
-              if( (pos = find_inline_code(temp)))
-              {
-                j+=pos;
-              }
-              else
-                if( (pos = find_bold(temp)))
-                {
-                  j+=pos;
-                }
-                else
-                  if( (pos = find_italic(temp)))
-                  {
-                    j+=pos;
-                  }
-                  else
-                    if( (pos = find_unicode(temp)))
-                    {
-                      j+=pos;
-                    }
-                    else
-                      if( (pos = find_comment(temp)))
-                      {
-                        j+=pos;
-                      }
-                      else
-                        if( (pos = find_references(temp)))
-                        {
-                          j+=pos;
-                        }
-                        else
-                          if( (pos = find_links(temp)))
-                          {
-                            j+=pos;
-                          }
-                          else
-                            if( temp[0] == '\\')
-                            {
-                              if( temp.length() > 1)
-                              {
-                                j += check_escaped_char(temp[1]);
-                              }
-                              else
-                                replace_char(temp[0]);
-                            }
-                            else
-                            {
-                              replace_char(temp[0]);
-                            }
+            replace_char(temp[0]);
+        }
+        else
+        {
+          replace_char(temp[0]);
+        }
       }
     }
     else
@@ -1499,7 +1455,7 @@ int MarkdownParser::find_references(string& s)
     bool image = m_match.length(1) > 0;
     Ref dummy;
     dummy.name = m_match.str(2);
-    string temp = m_match.str(3);
+    string temp = m_match.str(4);
     list<string> paras = extract_parameter(temp);
     if( paras.size() > 0)
     {
@@ -1516,62 +1472,83 @@ int MarkdownParser::find_references(string& s)
     else
       dummy.link = "";
 
-    if( image)
-      generate_img(dummy, dummy.name);
-    else
-      generate_link(dummy, dummy.name);
-  }
-  else
-    if( regex_search(s, m_match, m_reference_db))
+    if( m_match.str(3).empty())
     {
-      len = m_match.length(0)-1;
-      bool image = m_match.length(1) > 0;
 
-      if( (m_match.length(3) != 0) && m_match.str(3).compare("[]"))
+      if( image)
+        generate_img(dummy, dummy.name);
+      else
+        generate_link(dummy, dummy.name);
+    }
+    else
+    {
+      generate_link_img(dummy, dummy.name);
+    }
+  }
+  else if( regex_search(s, m_match, m_reference_db))
+  {
+    len = m_match.length(0)-1;
+    bool image = m_match.length(1) > 0;
+
+    if( (m_match.length(3) != 0) && m_match.str(3).compare("[]"))
+    {
+      string name = m_match.str(2);
+      string temp_ref = m_match.str(3).substr(1,m_match.length(3)-2);
+      toLower(temp_ref);
+      Ref refs = m_refs[temp_ref];
+      if( refs.link.empty())
       {
-        string name = m_match.str(2);
-        string temp_ref = m_match.str(3).substr(1,m_match.length(3)-2);
-        toLower(temp_ref);
-        Ref refs = m_refs[temp_ref];
-        if( refs.link.empty())
+        string dummy = m_match.str(0);
+        for( size_t j = 0; j < dummy.length(); ++j)
         {
-          string dummy = m_match.str(0);
-          for( size_t j = 0; j < dummy.length(); ++j)
-          {
-            replace_char(dummy[j]);
-          }
-        }
-        else
-        {
-          if( image)
-            generate_img(refs, name);
-          else
-            generate_link(refs, name);
+          replace_char(dummy[j]);
         }
       }
       else
       {
-        string name = m_match.str(2);
-        toLower(name);
-        Ref refs = m_refs[name];
-        name = m_match.str(2);
-        if( refs.link.empty())
-        {
-          name = "["+name+"]" + m_match.str(3);
-          for( size_t j = 0; j < name.length(); ++j)
-          {
-            replace_char(name[j]);
-          }
-        }
+        if( image)
+          generate_img(refs, name);
         else
-        {
-          if( image)
-            generate_img(refs, name);
-          else
-            generate_link(refs, name);
-        }
+          generate_link(refs, name);
       }
     }
+    else
+    {
+      string name = m_match.str(2);
+      toLower(name);
+      Ref refs = m_refs[name];
+      name = m_match.str(2);
+      if( refs.link.empty())
+      {
+        name = "["+name+"]" + m_match.str(3);
+        for( size_t j = 0; j < name.length(); ++j)
+        {
+          replace_char(name[j]);
+        }
+      }
+      else
+      {
+        if( image)
+          generate_img(refs, name);
+        else
+          generate_link(refs, name);
+      }
+    }
+  }
+
+  return len;
+}
+
+int MarkdownParser::find_footnote(string& s)
+{
+  size_t len = 0;
+
+  if( regex_search(s, m_match, m_footnote))
+  {
+    len = m_match.length(0)-1;
+
+    footnote_event(m_footnote_refs[m_match.str(1)]);
+  }
 
   return len;
 }
@@ -1587,14 +1564,13 @@ int MarkdownParser::find_links(string& s)
     refs.link = hide_chars("mailto:") + email;
     generate_link_no_replace(refs, email);
   }
-  else
-    if( regex_search(s, m_match, m_links))
-    {
-      len = m_match.length(0)-1;
-      Ref refs;
-      refs.link = m_match.str(1);
-      generate_link(refs, refs.link);
-    }
+  else if( regex_search(s, m_match, m_links))
+  {
+    len = m_match.length(0)-1;
+    Ref refs;
+    refs.link = m_match.str(1);
+    generate_link(refs, refs.link);
+  }
 
   return len;
 }
@@ -1644,6 +1620,13 @@ bool MarkdownParser::reference_line(string& line)
 
     return true;
   }
+  else if( regex_search(line, match, m_footnote_db))
+  {
+
+    m_footnote_refs[match.str(1)] = match.str(2);
+
+    return true;
+  }
 
   return false;
 }
@@ -1660,21 +1643,20 @@ int MarkdownParser::header_line(string& line)
     else
       mode = 2;
   }
-  else
-    if( regex_search(line, match, m_header_rule2))
+  else if( regex_search(line, match, m_header_rule2))
+  {
+    int len = string(match[1]).length();
+    string hold = "";
+    if( len > 6)
     {
-      int len = string(match[1]).length();
-      string hold = "";
-      if( len > 6)
-      {
-        for( ; len > 6; len--)
-          hold += "#";
-      }
-      string temp = hold + string(match[2]);
-      trim(temp);
-      line = header_event(temp,len);
-      mode = -1;
+      for( ; len > 6; len--)
+        hold += "#";
     }
+    string temp = hold + string(match[2]);
+    trim(temp);
+    line = header_event(temp,len);
+    mode = -1;
+  }
 
   return mode;
 }

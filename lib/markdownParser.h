@@ -31,7 +31,9 @@ enum Align
 };
 
 inline Align operator|(Align a, Align b)
-{return static_cast<Align>(static_cast<int>(a) | static_cast<int>(b));}
+{
+  return static_cast<Align>(static_cast<int>(a) | static_cast<int>(b));
+}
 
 using namespace std;
 
@@ -387,6 +389,13 @@ class MarkdownParser : public Parser
      */
     int find_references(string& s);
 
+    /** @brief if the first in the string is a footnote do the required stuff
+     *
+     * @param the line which will be detected
+     * @return int 0 if nothing was found else the number of chars consumed -1
+     */
+    int find_footnote(string& s);
+
     /** \brief if the first in the string is a link reference do the required stuff
      *
      * \param the line which will be detected
@@ -678,9 +687,30 @@ class MarkdownParser : public Parser
      */
     virtual void generate_img( Ref src, string& alt)=0;
 
+    /** @brief generate an image with a link inline
+     *
+     * @param src Ref the link part
+     * @param alt containing the image part to call parse again
+     */
+    virtual void generate_link_img( Ref src, string& alt)=0;
+
+    /** @brief set the footnote exact at this position, maybe the description should go somewhere
+     * else
+     *
+     * @param the footnote content has to be parse again
+     */
+    virtual void footnote_event(string& footnote)=0;
+
+    /** @brief for classes they need a special place for there footnotes.
+     * this routine is called after all parsing is done, but before the footer jumps in
+     *
+     */
+    virtual void footnote_end_event()=0;
+
   private:
 
     map<string,Ref> m_refs; /// referencen will be stored here
+    map<string,string> m_footnote_refs; /// referencen will be stored here
 
     regex m_bold;   /// regex to find bold manipulation
     regex m_italic; /// regex to find italic manipulation
@@ -716,6 +746,8 @@ class MarkdownParser : public Parser
     regex m_table; /// regex find header or normal line
     regex m_table_empty; /// regex to find an empty table line
     regex m_table_align; /// regex to find the most important line of a table
+    regex m_footnote_db;/// regex to find a footnote db entry
+    regex m_footnote; /// regex to find a footnote in text
 
     smatch m_match; /// get regex information
     smatch m_match2; /// get regex information ( table)

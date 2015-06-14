@@ -307,25 +307,22 @@ void HTMLParser::replace_code_char(string& line)
     {
       temp += "&lt;";
     }
+    else if( c == '>')
+    {
+      temp += "&gt;";
+    }
+    else if( c == '&')
+    {
+      temp += "&amp;";
+    }
+    else if( c == '\t')
+    {
+      temp += "    ";
+    }
     else
-      if( c == '>')
-      {
-        temp += "&gt;";
-      }
-      else
-        if( c == '&')
-        {
-          temp += "&amp;";
-        }
-        else
-          if( c == '\t')
-          {
-            temp += "    ";
-          }
-          else
-          {
-            temp += c;
-          }
+    {
+      temp += c;
+    }
   }
   insert(temp);
 }
@@ -450,4 +447,62 @@ void HTMLParser::generate_img(Ref src, string& alt)
   for( char c : alt)
     replace_char(c);
   insert("'/>");
+}
+
+
+void HTMLParser::generate_link_img(Ref ref, string& name)
+{
+  insert("<a href='");
+  for( char c : ref.link)
+    replace_char(c);
+  if( !ref.title.empty())
+  {
+    insert("' title='");
+    for( char c : ref.title)
+      replace_char(c);
+  }
+  insert("'>");
+  find_references(name);
+  insert("</a>");
+}
+
+void HTMLParser::footnote_event(string& footnote)
+{
+  m_footer_content.push_back(footnote);
+  insert("<sup><a href=\"#fn");
+  char buf[5];
+  sprintf(buf, "%d", m_footer_content.size());
+  insert(buf);
+  insert("\" id=\"ref");
+  insert(buf);
+  insert("\">");
+  insert(buf);
+  insert("</a></sup>");
+}
+
+void HTMLParser::footnote_end_event()
+{
+  char buf[5];
+  int i= 1;
+  for( string content : m_footer_content)
+  {
+    insert("<sup id=\"fn");
+    sprintf(buf, "%d", i);
+    insert(buf);
+    insert("\">");
+    insert(buf);
+    insert(". ");
+    parse_line(content);
+    insert("<a href=\"#ref");
+    insert(buf);
+    insert("\" title=\"Jump back to footnote ");
+    insert(buf);
+    insert(" in the text.\">&#8617;</a></sup>");
+    if( i != m_footer_content.size())
+    {
+      insert("<br>");
+    }
+    i++;
+    insert_line();
+  }
 }

@@ -28,22 +28,21 @@ list<string> Parser::extract_parameter(string& line)
   {
     if( isspace(line[i]))
       continue;
+    else if( line[i] == '\"' || line[i] == '\'')
+    {
+      char c = line[i++];
+      string temp = "";
+      while( i < line.length() && (line[i] != c))
+        temp += line[i++];
+      params.push_back(temp);
+    }
     else
-      if( line[i] == '\"' || line[i] == '\'')
-      {
-        char c = line[i++];
-        string temp = "";
-        while( i < line.length() && (line[i] != c))
-          temp += line[i++];
-        params.push_back(temp);
-      }
-      else
-      {
-        string temp = "";
-        while( i < line.length() && !isspace(line[i]))
-          temp += line[i++];
-        params.push_back(temp);
-      }
+    {
+      string temp = "";
+      while( i < line.length() && !isspace(line[i]))
+        temp += line[i++];
+      params.push_back(temp);
+    }
   }
 
   return params;
