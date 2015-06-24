@@ -6,6 +6,7 @@ MarkdownParser::MarkdownParser()
 {
   m_ordered = false;
   print_headers(true);
+  m_line_sensitiv = false;
   m_level = 0;
   m_bold = regex("^((?:\\*|_){2})((?!\\s|\\1).*?[^\\s\\\\](?:\\*|_)?)\\1");
   m_italic = regex("^(\\*|_)((?!\\s|\\1).*?[^\\s\\\\])\\1");
@@ -35,7 +36,7 @@ MarkdownParser::MarkdownParser()
   m_reference_inline = regex("^(!?)\\[(([^\\[]*\\[\\])?[^\\]]*)\\] ?\\(<?((?:#|https?://|/|ftp://|file://)?[^\\)]*?)>?\\)");
   m_links = regex("^<((?:(?:https?|ftp|file)://)[^\\s]+)>");
   m_email = regex("^<([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6})>");
-  m_force_line = regex("^[ ]{2,}($|\n)");
+  m_force_line = regex("^[ ]{2,}($|\n|\r)");
   m_ref = regex("^\\s{0,3}\\[([^\\]]+)\\]:\\s*(#|https?://|ftp://|/|file://)");// finding references in source
   m_word = regex("^((?:[a-zA-Z]+[a-zA-Z0-9]*|[0-9]+) ?)");
   m_table = regex("^[ \t]*\\|?[ \t]*.*[ \t]*(\\|[ \t]*.*[ \t]*\\|?)+$");
@@ -82,8 +83,14 @@ void MarkdownParser::parse()
   footnote_end_event();
 }
 
-void MarkdownParser::define_blocks(list<string>& lines, int level)
+void MarkdownParser::define_blocks(list<string>& lines, int pLevel)
 {
+
+  if( pLevel == -1)
+    level = m_level;
+  else
+    level = pLevel;
+
   bool found = true;
   for( list<string>::iterator line = lines.begin(); line != lines.end();)
   {
@@ -228,7 +235,7 @@ void MarkdownParser::code_block(list<string>::iterator& line, int level, list<st
       is_codeblock = true;
       break;
     }
-    else if( line == ende || (*line).empty())
+    else if( line == ende)
       break;
     tempStrings.push_back(*line);
   }
@@ -383,7 +390,6 @@ void MarkdownParser::list_block(list<string>::iterator& line, int level, list<st
     {
       insert_level(level+1);
       list_item_begin_event();
-      insert_line();
       list<string> content;
       content.push_back((*line).substr(m_match.length(0)));
       do
@@ -424,9 +430,7 @@ void MarkdownParser::list_block(list<string>::iterator& line, int level, list<st
 
       list_blocks(content, level+2);
 
-      insert_level(level+1);
       list_item_end_event();
-      insert_line();
     }
 
     if( line == ende)
@@ -817,7 +821,7 @@ void MarkdownParser::normal_block(list<string>::iterator& line, int level, bool&
 {
   string content;
   string cont = "";
-  insert_level(level);
+  //insert_level(level);
   if( multiline)
   {
     paragraph_begin_event();
@@ -1045,7 +1049,10 @@ void MarkdownParser::parse_line(string& s)
   {
     size_t pos = 0;
     string temp = s.substr(i);
-    if( isspace(temp[0]))
+    if( (pos = find_new_line(temp)))
+    {
+      i += pos;
+    } else if( isspace(temp[0]))
     {
       replace_char(temp[0]);
     }
@@ -1086,10 +1093,6 @@ void MarkdownParser::parse_line(string& s)
       i += pos;
     }
     else if( (pos = find_inline_code(temp)))
-    {
-      i += pos;
-    }
-    else if( (pos = find_new_line(temp)))
     {
       i += pos;
     }
@@ -1578,13 +1581,12 @@ int MarkdownParser::find_links(string& s)
 int MarkdownParser::find_new_line(string& s)
 {
   size_t len = 0;
-
+  cout << "\"" << s << "\" force line test" << endl;
   if( regex_search(s, m_match, m_force_line))
   {
+    cout << "new line force test" << endl;
     len = m_match.length(0)-1;
     new_line_event();
-    if( m_match.length(1))
-      insert_line();
   }
 
   return len;
@@ -1678,12 +1680,22 @@ void MarkdownParser::insert_level(int level)
 void MarkdownParser::insert_line()
 {
   if( m_content.back() != '\n')
-    insert("\n");
+  {
+    if( m_line_sensitiv)
+      new_line_event();
+    else
+      insert("\n");
+  }
   else
   {
     m_content.pop_back();
     if( m_content.back() != '\n')
-      insert("\n");
+    {
+      if( m_line_sensitiv)
+        new_line_event();
+      else
+        insert("\n");
+    }
     m_content.push_back('\n');
   }
 }

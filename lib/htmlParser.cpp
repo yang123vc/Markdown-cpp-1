@@ -180,7 +180,9 @@ void HTMLParser::list_item_begin_event()
 
 void HTMLParser::list_item_end_event()
 {
+  insert_level(level+1);
   insert( "</li>");
+  insert_line();
 }
 
 
@@ -483,7 +485,7 @@ void HTMLParser::footnote_event(string& footnote)
 void HTMLParser::footnote_end_event()
 {
   char buf[5];
-  int i= 1;
+  unsigned int i= 1;
   for( string content : m_footer_content)
   {
     insert("<sup id=\"fn");

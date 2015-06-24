@@ -8,6 +8,7 @@ using namespace std;
 #include "file.h"
 #include "lib/libmarkdown.h"
 #include "lib/htmlParser.h"
+#include "lib/latexParser.h"
 
 void show_help(char* s)
 {
@@ -62,8 +63,9 @@ int main(int argc, char** argv)
     content = get_file_contents(in_file.c_str());
   }
 
-  HTMLParser* parser = new HTMLParser();
-  parser->print_headers(false);
+  //HTMLParser* parser = new HTMLParser();
+  LaTexParser* parser = new LaTexParser();
+  parser->print_headers(true);
   parser->set_ground_level(level);
   string parsed = parse( content, parser);
 

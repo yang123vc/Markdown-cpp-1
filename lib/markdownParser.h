@@ -87,7 +87,7 @@ class MarkdownParser : public Parser
      * \param the lines which will be parsed
      * \param the indentation level, default value is 0
      */
-    void define_blocks(list<string>& lines, int level = 0);
+    void define_blocks(list<string>& lines, int pLevel = -1);
 
     /** \brief takes lines of a list block
      *
@@ -440,7 +440,7 @@ class MarkdownParser : public Parser
     /** \brief insert a new empty line into the buffer
      *
      */
-    void insert_line();
+    virtual void insert_line();
 
     /** \brief find for each opening html tag the closing one
      *
@@ -707,6 +707,9 @@ class MarkdownParser : public Parser
      */
     virtual void footnote_end_event()=0;
 
+    int level; // ground level
+    bool m_line_sensitiv; ///< insert some command to force an line brake in some environments
+
   private:
 
     map<string,Ref> m_refs; /// referencen will be stored here
@@ -754,8 +757,7 @@ class MarkdownParser : public Parser
 
     bool m_headers; /// flag for calling \c header_event or \c footer_event
     bool m_ordered; /// if a list is an ordered list
-
-    int m_level; // ground level
+    int m_level;
 };
 
 #endif // MARKDOWN_PARSER_H_

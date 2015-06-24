@@ -12,7 +12,7 @@
 				<Option object_output="obj/lib/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
-				<Option parameters="-o output/test.html Tests/Tabels.text" />
+				<Option parameters="-o output/test.tex Tests\CustomII.text" />
 				<Option host_application="./markdown" />
 				<Option run_host_application_in_terminal="1" />
 				<Option createDefFile="1" />
@@ -27,7 +27,7 @@
 				<Option object_output="obj/lib/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
-				<Option parameters="-o output/test.html Tests/Codeblocks.text" />
+				<Option parameters="-o output/test.tex Tests\CustomII.text" />
 				<Option host_application="bin/Debug/markdown.exe" />
 				<Option run_host_application_in_terminal="1" />
 				<Option createDefFile="1" />
@@ -69,6 +69,8 @@
 		<Unit filename="lib/functions.h" />
 		<Unit filename="lib/htmlParser.cpp" />
 		<Unit filename="lib/htmlParser.h" />
+		<Unit filename="lib/latexParser.cpp" />
+		<Unit filename="lib/latexParser.h" />
 		<Unit filename="lib/libmarkdown.cpp" />
 		<Unit filename="lib/libmarkdown.h" />
 		<Unit filename="lib/markdownParser.cpp" />
