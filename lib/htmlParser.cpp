@@ -229,6 +229,19 @@ void HTMLParser::code_end_event()
   insert( "</code>");
 }
 
+void HTMLParser::code_inline_begin_event(string lang)
+{
+  if( lang.empty())
+    insert( "<code>");
+  else
+    insert( "<code class='"+lang+"'>");
+}
+
+void HTMLParser::code_inline_end_event()
+{
+  insert( "</code>");
+}
+
 void HTMLParser::new_line_event()
 {
   insert(" <br />");

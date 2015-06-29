@@ -78,8 +78,10 @@ class HTMLParser : public MarkdownParser
     void preformat_end_event();
 
     void code_begin_event(string lang = "");
-
     void code_end_event();
+
+    void code_inline_begin_event(string lang = "");
+    void code_inline_end_event();
 
     void comment_begin_event();
 

@@ -1437,12 +1437,17 @@ int MarkdownParser::find_inline_code(string& s)
   {
     len = m_match.length(0)-1;
     string code_string = m_match.str(2);
-    code_begin_event();
-    for( size_t j = 0; j < code_string.length(); j++)
+    code_inline_begin_event();
+    int start = 0, ende = 0;
+    if( code_string.front() == ' ')
+      start++;
+    if( code_string.back() == ' ')
+      ende ++;
+    for( size_t j = start; j < code_string.length()-ende; j++)
     {
       replace_code_char(code_string[j]);
     }
-    code_end_event();
+    code_inline_end_event();
   }
 
   return len;

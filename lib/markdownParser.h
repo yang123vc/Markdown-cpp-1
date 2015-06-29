@@ -577,6 +577,17 @@ class MarkdownParser : public Parser
      */
     virtual void code_end_event()=0;
 
+    /** \brief event call if a new code block should be insert
+     *
+     * \param the language of the code block
+     */
+    virtual void code_inline_begin_event(string lang = "")=0;
+
+    /** \brief event call after a code block was insert
+     *
+     */
+    virtual void code_inline_end_event()=0;
+
     /** \brief event call before a comment block will be insert
      *
      */
