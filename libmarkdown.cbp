@@ -27,7 +27,7 @@
 				<Option object_output="obj/lib/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
-				<Option parameters="-o output/test.tex Tests\CustomII.text" />
+				<Option parameters='-o output/test.tex &quot;Tests\stackedit.text&quot;' />
 				<Option host_application="bin/Debug/markdown.exe" />
 				<Option run_host_application_in_terminal="1" />
 				<Option createDefFile="1" />

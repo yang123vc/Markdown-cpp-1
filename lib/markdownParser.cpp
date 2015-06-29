@@ -525,6 +525,7 @@ void MarkdownParser::html_block(list<string>::iterator& line, int level, list<st
     {
       if( content.size() > 1)
         insert_level(level+1);
+      this->level = level+1;
       parse_line(*it);
       if( content.size() > 1)
         insert_line();
@@ -1044,7 +1045,6 @@ void MarkdownParser::blockquote_manipulation(list<string>& lines)
 
 void MarkdownParser::parse_line(string& s)
 {
-
   for( size_t i = 0; i < s.length(); ++i)
   {
     size_t pos = 0;
@@ -1414,6 +1414,7 @@ int MarkdownParser::find_inline_code_block(string& s)
 
   if( regex_search(s, m_match, m_inline_code_block))
   {
+    cout << s << endl;
     len = m_match.length(0)-1;
     string code_string = m_match.str(3);
     preformat_begin_event();
@@ -1586,10 +1587,8 @@ int MarkdownParser::find_links(string& s)
 int MarkdownParser::find_new_line(string& s)
 {
   size_t len = 0;
-  cout << "\"" << s << "\" force line test" << endl;
   if( regex_search(s, m_match, m_force_line))
   {
-    cout << "new line force test" << endl;
     len = m_match.length(0)-1;
     new_line_event();
   }
@@ -1680,6 +1679,8 @@ void MarkdownParser::insert_level(int level)
 {
   for( int i = 0; i < level; i++)
     insert("    ");
+
+  this->level = level;
 }
 
 void MarkdownParser::insert_line()
