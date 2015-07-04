@@ -27,7 +27,6 @@
 				<Option external_deps="libmarkdown.a;" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="-o output/test.tex Tests\CustomII.text" />
 				<Compiler>
 					<Add option="-O3" />
 				</Compiler>

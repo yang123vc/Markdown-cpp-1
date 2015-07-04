@@ -122,6 +122,7 @@ class LaTexParser : public MarkdownParser
     bool first_quote;
     int table_cols;
     int current_col;
+    int newline_count;
     vector<char> m_align_cols;
     vector<string> m_language;
 

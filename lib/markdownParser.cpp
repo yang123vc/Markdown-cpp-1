@@ -26,9 +26,9 @@ MarkdownParser::MarkdownParser()
   m_horizontal_rule1 = regex("^[ ]{0,3}\\*([ ]{0,2}\\*){2,}[ \\t\\f]*$");
   m_horizontal_rule2 = regex("^[ ]{0,3}(-|_)([ ]{0,2}\\1){2,}[ \\t\\f]*$");
   m_hrule = regex("^[ ]{0,3}<[ ]?hr([^>]*?)/?>");
-  m_anylist = regex("^(\\*|\\+|-|[0-9]+\\.)(?: {0,3}|\\t)");
-  m_ulist = regex("^(\\*|\\+|-)(?: {1,3}|\\t)");
-  m_olist = regex("^[0-9]+\\.(?: {1,3}|\\t)");
+  m_anylist = regex("^[ ]{0,3}(\\*|\\+|-|[0-9]+\\.)(?: {1,3}|\\t)");
+  m_ulist = regex("^[ ]{0,3}(\\*|\\+|-)(?: {1,3}|\\t)");
+  m_olist = regex("^[ ]{0,3}[0-9]+\\.(?: {1,3}|\\t)");
   m_preformated = regex("^([ ]{4}|\\t)");
   m_code = regex("^```([^\\s]*)");
   m_code_end = regex("(.*)```");
@@ -1678,7 +1678,7 @@ bool MarkdownParser::horizontal_rule_line(string& line)
 void MarkdownParser::insert_level(int level)
 {
   for( int i = 0; i < level; i++)
-    insert("    ");
+    insert("  ");
 
   this->level = level;
 }

@@ -119,43 +119,46 @@ string LaTexParser::header_event(string line, int level, string paras)
   switch( level)
   {
     case 1:
-      header += "\\\\section{";
+      header += "\\section{";
     break;
 
     case 2:
-      header += "\\\\subsection{";
+      header += "\\subsection{";
     break;
 
     case 3:
-      header += "\\\\subsubsection{";
+      header += "\\subsubsection{";
     break;
 
     case 4:
-      header += "\\\\paragraph{";
+      header += "\\paragraph{";
     break;
 
     case 5:
-      header += "\\\\subparagraph{";
+      header += "\\subparagraph{";
     break;
 
     default:
-      header += "\\\\textbf{";
+      header += "\\textbf{";
     break;
   }
   header += line;
   header += "}";
   if( level < 6)
   {
-    header += "\\\\label{";
+    header += "\\label{";
+    size_t pos;
+    while( (pos = line.find("ß")) != string::npos)
+      line.replace(pos, 2, "\\\"ss");
     header += line;
-    header += "}\3";
+    header += "}";
   }
   return header;
 }
 
 string LaTexParser::horizontal_rule_event(string paras)
 {
-  string line = "\\\\rule{\\\\linewidth}{0.4pt}";
+  string line = "\\rule{\\linewidth}{0.4pt}";
   return line;
 }
 
@@ -238,12 +241,14 @@ void LaTexParser::table_end_multi_col()
 void LaTexParser::paragraph_begin_event()
 {
   m_line_sensitiv = true;
+  newline_count = 0;
 }
 
 void LaTexParser::paragraph_end_event()
 {
   m_line_sensitiv = false;
-  new_line_event();
+  if( newline_count > 0)
+    new_line_event();
 }
 
 void LaTexParser::blockquote_begin_event()
@@ -366,17 +371,8 @@ void LaTexParser::text_italic_end_event()
 
 void LaTexParser::new_line_event()
 {
-  if( !(m_content.back() == '\3'))
-  {
-    if( m_content.back() == '\n')
-      m_content.pop_back();
-    insert("\\newline\n");
-  }
-  else
-  {
-    m_content.pop_back();
-    insert("\n");
-  }
+  m_content.pop_back();
+  insert("\n");
   insert_level(level);
 }
 
@@ -408,6 +404,8 @@ void LaTexParser::replace_char(const char& c)
 {
   if( c == '#')
     insert("\\#");
+  else if(c == '&')
+    insert("\\&");
   else if( c == '\"')
   {
     if( first_quote)
@@ -420,6 +418,9 @@ void LaTexParser::replace_char(const char& c)
     insert("\\$");
   else
     insert(c);
+
+  if( c == '\n')
+    newline_count++;
 }
 
 int LaTexParser::check_escaped_char(const char& c)
@@ -429,11 +430,13 @@ int LaTexParser::check_escaped_char(const char& c)
   {
     case '\\':
       insert(c);
+      insert(c);
     break;
     case '"':
       insert(c);
     break;
     default:
+      insert('\\');
       len = 0;
     break;
   }
@@ -480,7 +483,7 @@ void LaTexParser::generate_img(Ref src, string& alt)
     replace_char(c);
   insert("}\n");
   insert_level(level-1);
-  insert("\\end{figure}\3");
+  insert("\\end{figure}");
 }
 
 void LaTexParser::generate_link_img(Ref src, string& name)
