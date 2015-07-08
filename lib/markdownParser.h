@@ -187,6 +187,8 @@ class MarkdownParser : public Parser
      */
     void normal_block(list<string>::iterator& line, int level, bool& multiline, list<string>::iterator ende);
 
+    void toc_block( list<string>::iterator& line, int level, list<string>::iterator ende);
+
     /** \brief checks if the given line belongs to one of the specified blocks is
      *
      * checks if the given line belongs to a
@@ -289,6 +291,13 @@ class MarkdownParser : public Parser
      * \return true if the given line is a table align line
      */
     bool istable_align( string& line);
+
+    /** @brief test if the given line is the table of contents marker
+     *
+     * @param line string& the line to check for the TABLE OF CONTENT
+     * @return bool true if the given line is the TOC marker
+     */
+    bool istoc(string& line);
 
     /** \brief does some parsing preparations
      * replaces - = lines with headlines and insert hr lines and stuff
@@ -718,6 +727,10 @@ class MarkdownParser : public Parser
      */
     virtual void footnote_end_event()=0;
 
+    /** @brief event triggered if a table of contents line ([TOC]) was found
+     */
+    virtual void toc_event()=0;
+
     int level; // ground level
     bool m_line_sensitiv; ///< insert some command to force an line brake in some environments
 
@@ -762,6 +775,7 @@ class MarkdownParser : public Parser
     regex m_table_align; /// regex to find the most important line of a table
     regex m_footnote_db;/// regex to find a footnote db entry
     regex m_footnote; /// regex to find a footnote in text
+    regex m_toc;///< regex to find a table of contents command
 
     smatch m_match; /// get regex information
     smatch m_match2; /// get regex information ( table)

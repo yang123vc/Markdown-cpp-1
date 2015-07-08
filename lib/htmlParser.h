@@ -123,6 +123,8 @@ class HTMLParser : public MarkdownParser
 
     void footnote_end_event();
 
+    void toc_event();
+
   private:
 
     list<string> table_align;

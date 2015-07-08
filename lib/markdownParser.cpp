@@ -44,6 +44,7 @@ MarkdownParser::MarkdownParser()
   m_table_empty = regex("^[ \t]*\\|?[ \t]*---+[ \t]*(\\|[ \t]*---+[ \t]*)+\\|?[ \t]*$");
   m_footnote_db = regex("^[ \t]*\\[\\^([^\\]]*)\\]: ?(.*)$");
   m_footnote = regex("^\\[\\^([^\\]]*)\\]");
+  m_toc = regex("^[\\ \t]*\\[TOC\\][\\ \t]*$");
 }
 
 MarkdownParser::~MarkdownParser()
@@ -105,7 +106,11 @@ void MarkdownParser::define_blocks(list<string>& lines, int pLevel)
 
     if( (*line).length() > 1)
     {
-      if( ishrule(*line))
+      if( istoc(*line))
+      {
+        toc_block(line, level, lines.end());
+      }
+      else if( ishrule(*line))
       {
         hrule_block(line, level, lines.end());
       }
@@ -874,6 +879,13 @@ void MarkdownParser::normal_block(list<string>::iterator& line, int level, bool&
   insert_line();
 }
 
+void MarkdownParser::toc_block(list<string>::iterator& line, int level, list<string>::iterator ende)
+{
+  insert_level(level);
+  toc_event();
+  insert_line();
+}
+
 bool MarkdownParser::isblock(string& line)
 {
   return (isblockquote(line) || ishrule(line)
@@ -946,6 +958,11 @@ bool MarkdownParser::istable(string& line)
 bool MarkdownParser::istable_align(string& line)
 {
   return regex_search( line, m_match, m_table_align);
+}
+
+bool MarkdownParser::istoc(string& line)
+{
+  return regex_search(line, m_match, m_toc);
 }
 
 void MarkdownParser::initial_manipulation()

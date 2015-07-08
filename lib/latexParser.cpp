@@ -4,6 +4,7 @@
 LaTexParser::LaTexParser()
 {
   first_quote = true;
+  m_figure = true;
   m_language.push_back("abap");
   m_language.push_back("acsl");
   m_language.push_back("ada");
@@ -105,6 +106,7 @@ void LaTexParser::header_event()
   insert("\\usepackage{graphicx}\n");
   insert("\\usepackage{listings}\n");
   insert("\\usepackage{multirow}\n");
+  insert("\\usepackage{amssymb}\n");
   insert("\\setlength\\parindent{0pt}\n");
   insert("\n");
   insert("\\newcommand{\\comment}[1]{}\n");
@@ -415,10 +417,19 @@ void LaTexParser::replace_char(const char& c)
     first_quote = !first_quote;
   }
   else if( c == '$')
-    insert("\\$");
+  {
+    if( m_last_char == '$')
+    {
+      m_content.pop_back();
+      m_content.pop_back();
+      insert("$$");
+    }
+    else
+      insert("\\$");
+  }
   else
     insert(c);
-
+  m_last_char = c;
   if( c == '\n')
     newline_count++;
 }
@@ -469,21 +480,28 @@ void LaTexParser::generate_link_no_replace(Ref ref, string& name)
 
 void LaTexParser::generate_img(Ref src, string& alt)
 {
-  insert("\\begin{figure}[htbp]\n");
-  insert_level(level+1);
-  insert("\\centering\n");
-  insert_level(level);
+  if( m_figure)
+  {
+    insert("\\begin{figure}[htbp]\n");
+    insert_level(level+1);
+    insert("\\centering\n");
+    insert_level(level);
+  }
   insert("\\includegraphics{");
   for( char c : src.link)
     replace_char(c);
-  insert("}\n");
-  insert_level(level);
-  insert("\\caption{");
-  for( char c : alt)
-    replace_char(c);
-  insert("}\n");
-  insert_level(level-1);
-  insert("\\end{figure}");
+  insert("}");
+  if( m_figure)
+  {
+    insert("\n");
+    insert_level(level);
+    insert("\\caption{");
+    for( char c : alt)
+      replace_char(c);
+    insert("}\n");
+    insert_level(level-1);
+    insert("\\end{figure}");
+  }
 }
 
 void LaTexParser::generate_link_img(Ref src, string& name)
@@ -492,7 +510,9 @@ void LaTexParser::generate_link_img(Ref src, string& name)
   for( char c : src.link)
     replace_char(c);
   insert("}{");
+  m_figure = false;
   find_references(name);
+  m_figure = true;
   if( m_content.back() == '\3')
     m_content.pop_back();
   insert("}");
@@ -507,4 +527,10 @@ void LaTexParser::footnote_event(string& footnote)
 
 void LaTexParser::footnote_end_event()
 {
+}
+
+void LaTexParser::toc_event()
+{
+  cout << "TABLE OF CONTENTS" << endl;
+  insert("\\tableofcontents");
 }

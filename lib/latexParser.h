@@ -117,12 +117,16 @@ class LaTexParser : public MarkdownParser
 
     void footnote_end_event();
 
+    void toc_event();
+
   private:
 
     bool first_quote;
+    bool m_figure;
     int table_cols;
     int current_col;
     int newline_count;
+    char m_last_char;
     vector<char> m_align_cols;
     vector<string> m_language;
 

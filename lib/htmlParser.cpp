@@ -521,3 +521,7 @@ void HTMLParser::footnote_end_event()
     insert_line();
   }
 }
+
+void HTMLParser::toc_event()
+{
+}
